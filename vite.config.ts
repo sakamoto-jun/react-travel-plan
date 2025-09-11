@@ -12,4 +12,9 @@ export default defineConfig({
       // Express 서버(3000) 로 API 요청 프록시
     },
   },
+  resolve: {
+    alias: {
+      "@": "/src",
+    },
+  },
 });
