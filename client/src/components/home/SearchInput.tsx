@@ -12,7 +12,7 @@ const SearchInput = ({
   onCompositionEnd,
 }: SearchInputProps) => {
   return (
-    <div className="w-full max-w-[340px] h-40 relative mx-auto mb-24">
+    <div className="w-full max-w-[340px] h-40 relative mb-24">
       <input
         className="pl-12 pr-46 w-full h-full bg-bg2 outline-none border border-gray200 rounded-10"
         type="text"
