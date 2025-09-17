@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import { createBrowserRouter } from "react-router-dom";
 
 const RegisterCity = lazy(() => import("@/pages/admin/RegisterCity"));
+const Home = lazy(() => import("@/pages/home/Home"));
 
 const router = createBrowserRouter([
   {
@@ -17,6 +18,14 @@ const router = createBrowserRouter([
         ),
       },
     ],
+  },
+  {
+    path: "/",
+    element: (
+      <Suspense fallback={<Loading />}>
+        <Home />
+      </Suspense>
+    ),
   },
 ]);
 
