@@ -2,20 +2,14 @@ import NarrowLayout from "@/components/common/NarrowLayout";
 import CityList from "@/components/home/CityList";
 import FilterList from "@/components/home/FilterList";
 import SearchInput from "@/components/home/SearchInput";
-import { useState } from "react";
 
 const Home = () => {
   // const {data} = useQuery(/* 국가필터, 검색필터 */);
   // 상태 관리 여기서 진행 + 필터 처리 해줘야 함
-  const [search, setSearch] = useState("");
 
   return (
     <NarrowLayout className="flex flex-col items-center py-30">
-      <SearchInput
-        value={search}
-        onChange={setSearch}
-        onCompositionEnd={(value) => console.log(value)}
-      />
+      <SearchInput onCompositionEnd={(value) => console.log(value)} />
       <div className="mb-21">
         <FilterList selectedFilter="all" onChange={() => {}} />
       </div>

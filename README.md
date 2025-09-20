@@ -1,69 +1,50 @@
-# React + TypeScript + Vite
+# ✅ 개선 사항
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 1. 시작/도착 날짜 미선택 처리
 
-Currently, two official plugins are available:
+- **문제**: 사용자가 날짜를 선택하지 않고 `null`을 전달하는 경우 상태 불일치 가능성 발생.
+- **해결**: `if (!date)` 조건문으로 `null` 감지 → 해당 날짜 및 관련 상태 초기화.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```ts
+setStartDate: (date) => {
+  if (!date) {
+    set({ startDate: null, endDate: null }); // 시작일 초기화 시 도착일도 리셋
+    return;
+  }
+  set({ startDate: date });
+},
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+setEndDate: (date) => {
+  if (!date) {
+    set({ endDate: null }); // 도착일만 초기화
+    return;
+  }
+  ...
+}
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 2. 도착 날짜가 시작 날짜보다 빠른 경우 처리
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **문제**: `endDate < startDate` 상황 발생 시, 잘못된 범위가 저장됨.
+- **해결**: `set` 함수에 콜백(`state`)을 사용하여 최신 상태를 보장하고, 유효성 검사 추가.
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```ts
+setEndDate: (date) => {
+  if (!date) {
+    set({ endDate: null });
+    return;
+  }
+  set((state) => {
+    if (state.startDate && date < state.startDate) {
+      return { endDate: null }; // 잘못된 범위 방지
+    }
+    return { endDate: date };
+  });
+};
 ```
+
+## 📌 정리
+
+- `if (!date)` → **날짜 미선택 시 초기화**
+- `set((state) => ...)` → **state 기반 유효성 검사 (endDate < startDate 방지)**
+- 시작일을 지우면 **도착일도 자동 리셋, 도착일만 지우면 시작일은 유지**
