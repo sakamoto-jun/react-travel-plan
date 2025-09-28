@@ -1,0 +1,8 @@
+{"code":"US","name":"미국","nameEn":"United States","voltage":110,"visa":{"required":true,"duration":90},"continent":"North America","_id":"3QVrMc79GgYDZM9h"}
+{"code":"GB","name":"영국","nameEn":"United Kingdom","voltage":230,"visa":{"required":false,"duration":180},"continent":"Europe","_id":"K7sTZUTbqCm1MNeJ"}
+{"code":"FR","name":"프랑스","nameEn":"France","voltage":220,"visa":{"required":false,"duration":90},"continent":"Europe","_id":"Tj4NDAZdQzM7CTJh"}
+{"code":"AU","name":"호주","nameEn":"Australia","voltage":230,"visa":{"required":true,"duration":90},"continent":"Oceania","_id":"ZD3kpo1JrQmqydTa"}
+{"code":"TH","name":"태국","nameEn":"Thailand","voltage":220,"visa":{"required":false,"duration":90},"continent":"Asia","_id":"eOsOj4jiJALoM2si"}
+{"code":"KR","name":"대한민국","nameEn":"South Korea","voltage":220,"visa":{"required":false,"duration":90},"continent":"Asia","_id":"nBJWxLFiWw4gPajK"}
+{"code":"JP","name":"일본","nameEn":"Japan","voltage":110,"visa":{"required":false,"duration":90},"continent":"Asia","_id":"p4QHCaq7itBmTA1R"}
+{"code":"EG","name":"이집트","nameEn":"Egypt","voltage":220,"visa":{"required":true,"duration":30},"continent":"Africa","_id":"rhzL6mMJhnoiwovr"}

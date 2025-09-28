@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import { createBrowserRouter } from "react-router-dom";
 
 const RegisterCity = lazy(() => import("@/pages/admin/RegisterCity"));
+const RegisterCountry = lazy(() => import("@/pages/admin/RegisterCountry"));
 const Home = lazy(() => import("@/pages/home/Home"));
 
 const router = createBrowserRouter([
@@ -14,6 +15,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<Loading />}>
             <RegisterCity />
+          </Suspense>
+        ),
+      },
+      {
+        path: "register-country",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <RegisterCountry />
           </Suspense>
         ),
       },

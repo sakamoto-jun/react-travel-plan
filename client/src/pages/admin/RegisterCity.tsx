@@ -1,28 +1,23 @@
-import type { FormEvent } from "react";
+import { useRef } from "react";
 
 const RegisterCity = () => {
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    const formData = new FormData(e.currentTarget);
-    const city = {
-      city: (formData.get("city") ?? "") as string,
-      name: (formData.get("name") ?? "") as string,
-      description: (formData.get("description") ?? "") as string,
-    };
+  const registerCity = async () => {
+    const city = textareaRef.current?.value;
 
-    if (!city.city || !city.name || !city.description) return;
+    if (!city) return;
 
     try {
       const res = await fetch("/api/cities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(city),
+        body: city,
       });
 
       if (res.ok) {
         alert("City registered successfully!");
-        e.currentTarget.reset();
+        textareaRef.current!.value = "";
       } else {
         alert("Failed to register city.");
       }
@@ -32,21 +27,12 @@ const RegisterCity = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <label>
-        City Name:
-        <input type="text" name="city" />
-      </label>
-      <label>
-        Name:
-        <input type="text" name="name" />
-      </label>
-      <label>
-        Description:
-        <input type="text" name="description" />
-      </label>
-      <button type="submit">Register City</button>
-    </form>
+    <div>
+      <div>
+        <textarea ref={textareaRef} />
+      </div>
+      <button onClick={registerCity}>등록</button>
+    </div>
   );
 };
 

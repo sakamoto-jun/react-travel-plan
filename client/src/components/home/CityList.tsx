@@ -7,12 +7,12 @@ interface CityListProps {
 
 const CityList = ({ cities }: CityListProps) => {
   return (
-    <div className="flex flex-wrap justify-between gap-y-28">
+    <div className="w-full flex flex-wrap justify-between gap-y-28 ">
       {cities.map((city) => (
         <Card
           key={city._id}
-          title={city.name}
-          description={city.description}
+          title={city.nameEn}
+          description={`${city.country.name} ${city.name}`}
           image={city.thumbnail}
         />
       ))}

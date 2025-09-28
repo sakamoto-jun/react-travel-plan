@@ -1,59 +1,39 @@
+import Loading from "@/components/common/Loading";
 import NarrowLayout from "@/components/common/NarrowLayout";
 import CityList from "@/components/home/CityList";
 import FilterList from "@/components/home/FilterList";
 import SearchInput from "@/components/home/SearchInput";
+import { getCities, searchCities } from "@/services/home";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 const Home = () => {
   // const {data} = useQuery(/* 국가필터, 검색필터 */);
-  // 상태 관리 여기서 진행 + 필터 처리 해줘야 함
+  const [query, setQuery] = useState("");
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["cities", query],
+    queryFn: () => {
+      if (query) {
+        return searchCities(query);
+      } else {
+        return getCities();
+      }
+    }, // queryFn은 항상 return 하여 Promise를 반환하게 만들어야 됨.
+  });
+
+  if (isLoading) return <Loading />;
+  if (error) return <div>에러가 발생했습니다 😭</div>;
+  if (!data) return null;
 
   return (
     <NarrowLayout className="flex flex-col items-center py-30">
-      <SearchInput onCompositionEnd={(value) => console.log(value)} />
+      <SearchInput onCompositionEnd={(value) => setQuery(value)} />
       <div className="mb-21">
         <FilterList selectedFilter="all" onChange={() => {}} />
       </div>
-      <CityList cities={DUMMY_DATA} />
+      <CityList cities={data} />
     </NarrowLayout>
   );
 };
 
 export default Home;
-
-const DUMMY_DATA = [
-  {
-    _id: "1",
-    city: "seoul",
-    name: "서울",
-    description: "대한민국의 수도",
-    thumbnail: "https://picsum.photos/316/200?random=1",
-  },
-  {
-    _id: "2",
-    city: "busan",
-    name: "부산",
-    description: "대한민국 제2의 도시",
-    thumbnail: "https://picsum.photos/316/200?random=2",
-  },
-  {
-    _id: "3",
-    city: "jeju",
-    name: "제주",
-    description: "대한민국의 휴양지",
-    thumbnail: "https://picsum.photos/316/200?random=3",
-  },
-  {
-    _id: "4",
-    city: "tokyo",
-    name: "도쿄",
-    description: "일본의 수도",
-    thumbnail: "https://picsum.photos/316/200?random=4",
-  },
-  {
-    _id: "5",
-    city: "osaka",
-    name: "오사카",
-    description: "일본 제2의 도시",
-    thumbnail: "https://picsum.photos/316/200?random=5",
-  },
-];
