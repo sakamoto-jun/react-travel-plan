@@ -1,3 +1,4 @@
+import type { FunctionComponent } from "react";
 import { create } from "zustand";
 
 interface State {
@@ -5,10 +6,10 @@ interface State {
   endDate: Date | null;
 }
 
-type Action = {
+interface Action {
   setStartDate: (date: Date | null) => void;
   setEndDate: (date: Date | null) => void;
-};
+}
 
 const store = create<State & Action>()((set) => ({
   startDate: null,
@@ -34,4 +35,29 @@ const store = create<State & Action>()((set) => ({
   },
 }));
 
-export default store;
+export type ModalComponent = FunctionComponent<{ onClose: () => void }>;
+
+interface ModalState {
+  modals: ModalComponent[];
+}
+
+interface ModalAction {
+  openModal: (modal: FunctionComponent<{ onClose: () => void }>) => void;
+  closeModal: (index: number) => void;
+}
+
+const useModalStore = create<ModalState & ModalAction>()((set) => ({
+  modals: [],
+  openModal: (modal) => {
+    set((state) => ({
+      modals: [...state.modals, modal],
+    }));
+  },
+  closeModal: (index) => {
+    set((state) => ({
+      modals: state.modals.filter((_, i) => i !== index),
+    }));
+  },
+}));
+
+export { store, useModalStore };
