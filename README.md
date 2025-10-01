@@ -274,3 +274,42 @@ function attachCountryToCities(
 ```
 
 > ✅ 코드 중복 제거 + 응답 구조 일관성 보장 (`CitiesWithCountry[]`)
+
+## 13. 시차 계산 로직 개선 (UTC Offset → 한국 기준 변환)
+
+- **문제**: 기존에는 `city.timezoneOffset`을 그대로 출력해서 `UTC 기준 오프셋`만 보여줬음.
+
+  → 서울(9)과 부산(9)이 동일해도 "없음" 처리가 안 되고, 뉴욕(-5)도 실제 한국 대비 -14시간인데 -5시간으로 표시되는 오류 발생.
+
+- **해결**: 한국 표준시(UTC+9)를 기준으로 차이를 계산하는 `getTimeDiff` 헬퍼 함수를 도입.
+
+  → 도시별 `timezoneOffset`에서 `9`를 빼고, 양수/음수에 따라 `+n시간 / -n시간`을 출력.
+
+  → 동일한 오프셋일 경우 `"없음"` 처리.
+
+**Before**
+
+```ts
+<p className="text-gray800 font-medium">
+  {city.timezoneOffset === 0 ? "없음" : `${city.timezoneOffset}시간`}
+</p>
+```
+
+**After**
+
+```ts
+// 헬퍼 함수
+const getTimeDiff = (cityOffset: number) => {
+  const koreaOffset = 9; // UTC+9
+  const diff = cityOffset - koreaOffset;
+
+  if (diff === 0) return "없음";
+  return diff > 0 ? `+${diff}시간` : `${diff}시간`;
+};
+```
+
+```tsx
+<p className="text-gray800 font-medium">{getTimeDiff(city.timezoneOffset)}</p>
+```
+
+> ✅ 이제 서울/부산은 `"없음"`, 파리는 `-8시간`, 뉴욕은 `-14시간`, 시드니는 `+1시간`으로 정확하게 한국 기준 시차가 표시됨.

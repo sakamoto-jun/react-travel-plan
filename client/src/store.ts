@@ -35,7 +35,7 @@ const store = create<State & Action>()((set) => ({
   },
 }));
 
-export type ModalComponent = FunctionComponent<{ onClose: () => void }>;
+type ModalComponent = FunctionComponent<{ onClose: () => void }>;
 
 interface ModalState {
   modals: ModalComponent[];
