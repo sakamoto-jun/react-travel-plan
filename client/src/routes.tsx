@@ -5,6 +5,7 @@ import { createBrowserRouter } from "react-router-dom";
 const RegisterCity = lazy(() => import("@/pages/admin/RegisterCity"));
 const RegisterCountry = lazy(() => import("@/pages/admin/RegisterCountry"));
 const Home = lazy(() => import("@/pages/home/Home"));
+const PlanCity = lazy(() => import("@/pages/plan/City"));
 
 const router = createBrowserRouter([
   {
@@ -33,6 +34,14 @@ const router = createBrowserRouter([
     element: (
       <Suspense fallback={<Loading />}>
         <Home />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/plan/:city",
+    element: (
+      <Suspense fallback={<Loading />}>
+        <PlanCity />
       </Suspense>
     ),
   },

@@ -9,7 +9,7 @@ const px0_20 = Object.fromEntries(
 );
 
 export default {
-  content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
+  content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx,css}"],
   theme: {
     extend: {
       spacing: px0_200,

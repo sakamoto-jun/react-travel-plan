@@ -313,3 +313,161 @@ const getTimeDiff = (cityOffset: number) => {
 ```
 
 > ✅ 이제 서울/부산은 `"없음"`, 파리는 `-8시간`, 뉴욕은 `-14시간`, 시드니는 `+1시간`으로 정확하게 한국 기준 시차가 표시됨.
+
+---
+
+# 🧭 시도 기록
+
+## 📘 Date Picker 교체 과정
+
+### 1️⃣ 초기 선택: `react-datepicker`
+
+- 이유: `selectsRange`, `locale`, `renderCustomHeader` 등
+
+  범위 선택 및 커스텀 기능이 모두 내장되어 있어 초기 구현 속도가 빠름.
+
+- 문제점:
+
+  `react-datepicker`는 내부 CSS 영향력이 매우 강해, **Tailwind 기반 커스텀 디자인 적용이 까다로움**.
+
+  > ⚠️ 특히 버튼, 캘린더 셀 스타일을 프로젝트 디자인 시스템에 맞게 통일하기 어려움.
+
+### 2️⃣ 전환 시도: `react-day-picker`
+
+- 이유:
+
+  `react-day-picker`는 Headless 구조 기반이라 UI를 완전히 자유롭게 구성할 수 있고, 프로젝트의 커스텀 디자인 시스템과 Tailwind 조합에 적합하다고 판단.
+
+- 시도 내용:
+
+  `DayPicker`의 `range` 모드와 `MonthCaption` 커스텀을 활용해 네비게이션 버튼과 한글 로케일이 적용된 커스텀 달력을 구현함.
+
+```tsx
+import LeftArrowIcon from "@/assets/icons/keyboard_arrow_left.svg?react";
+import { addDays, format, isAfter, isBefore } from "date-fns";
+import { ko } from "date-fns/locale";
+import { useState } from "react";
+import "react-datepicker/dist/react-datepicker.css";
+import {
+  DayPicker,
+  useDayPicker,
+  type MonthCaptionProps,
+} from "react-day-picker";
+import "react-day-picker/style.css";
+import "./TravelDateSelector.css";
+
+const TravelDateSelector = () => {
+  const today = new Date();
+  const [from, setFrom] = useState<Date | undefined>();
+  const [to, setTo] = useState<Date | undefined>();
+  const [hoverDate, setHoverDate] = useState<Date>();
+
+  const handleSelect = (range: { from?: Date; to?: Date } | undefined) => {
+    if (!range) {
+      setFrom(undefined);
+      setTo(undefined);
+      return;
+    }
+
+    const { from, to } = range;
+    setFrom(from);
+    setTo(to);
+  };
+
+  const isInHoverRange = (day: Date) => {
+    if (!from || to || !hoverDate) return false;
+    return (
+      isAfter(hoverDate, from) && isAfter(day, from) && isBefore(day, hoverDate)
+    );
+  };
+
+  const disabledDays = { before: today, after: from && addDays(from, 10) };
+
+  return (
+    <div className="px-26 py-36 rounded-16 border-2 border-gray200 bg-bg2">
+      <DayPicker
+        mode="range"
+        numberOfMonths={2}
+        locale={ko}
+        selected={{ from, to }}
+        onSelect={handleSelect}
+        disabled={disabledDays}
+        onDayMouseEnter={setHoverDate}
+        onDayMouseLeave={() => setHoverDate(undefined)}
+        modifiers={{
+          hoverRange: isInHoverRange,
+        }}
+        modifiersClassNames={{
+          hoverRange: "rdp-hover-range_middle",
+        }}
+        hideNavigation
+        max={10}
+        components={{
+          MonthCaption: CustomMonthCaption,
+        }}
+      />
+    </div>
+  );
+};
+
+const CustomMonthCaption = ({
+  calendarMonth,
+  displayIndex,
+  ...divProps
+}: MonthCaptionProps) => {
+  const { goToMonth, previousMonth, nextMonth } = useDayPicker();
+
+  return (
+    <div {...divProps} className="flex justify-between items-center mb-16">
+      <button
+        type="button"
+        aria-label="Previous month"
+        className={displayIndex === 1 ? "invisible" : ""}
+        onClick={() => previousMonth && goToMonth(previousMonth)}
+      >
+        <LeftArrowIcon />
+      </button>
+      <span className="text-20 font-bold leading-[24px] tracking-[0.38px]">
+        {format(calendarMonth.date, "yyyy년 M월", { locale: ko })}
+      </span>
+      <button
+        type="button"
+        aria-label="Next month"
+        className={displayIndex === 0 ? "invisible" : ""}
+        onClick={() => nextMonth && goToMonth(nextMonth)}
+      >
+        <LeftArrowIcon className="scale-x-[-1]" />
+      </button>
+    </div>
+  );
+};
+```
+
+### 3️⃣ 문제점 (Hover 구간 처리 한계)
+
+- 의도:
+
+  시작일 클릭 후 → 마감일 선택 전까지 마우스 hover로 “예비 구간(range preview)”을 시각적으로 표시하려고 함.
+
+- 시도 방식:
+
+  `modifiers`와 `modifiersClassNames`를 활용해 `isInHoverRange()` 함수를 작성, hover 상태일 때 `rdp-hover-range_middle` 클래스 추가를 시도.
+
+- 결과:
+
+  `react-day-picker` 내부의 `range_middle` 로직과 충돌하여 hover 중간 날짜 스타일이 렌더링되지 않음. **즉, hover 상태의 예비 구간 강조 미적용.**
+
+  > ⚠️ v9.11.1 기준 공식 문서에서도 hover range preview 관련 API는 제공되지 않음.
+  > 따라서 완전한 hover-range UX 구현은 사실상 불가능했음.
+
+### 4️⃣ 결론: 다시 `react-datepicker`로 회귀
+
+- 이유:
+
+  `react-day-picker`는 커스텀 자유도가 높지만, hover-range처럼 기본 UX까지 직접 구현해야 하기에 개발 효율성이 떨어짐.
+
+- 결정:
+
+  유지보수성과 일정 효율을 고려하여 react-datepicker로 복귀. 기본 스타일의 영향이 강하더라도, `hover` `preview`, `range selection`, `locale`, `custom header` 등의 주요 기능이 모두 내장되어 있어 실용적이라 판단함.
+
+  > ✅ 결론적으로, `react-day-picker`는 기술적으로 흥미로운 시도였지만, **현재 기준에서는 react-datepicker의 안정성과 즉시성이 더 적합했다.**
