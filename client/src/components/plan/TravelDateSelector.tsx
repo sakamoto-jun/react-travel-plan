@@ -1,21 +1,24 @@
 import LeftArrowIcon from "@/assets/icons/keyboard_arrow_left.svg?react";
 import { ko } from "date-fns/locale";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import DatePicker, {
   type ReactDatePickerCustomHeaderProps,
 } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "./TravelDateSelector.css";
 
-const TravelDateSelector = () => {
+interface Props {
+  startDate: Date | null;
+  endDate: Date | null;
+  onChange: (start: Date | null, end: Date | null) => void;
+}
+
+const TravelDateSelector = ({ startDate, endDate, onChange }: Props) => {
   const today = new Date();
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
   const monthsShown = useMemo(() => 2, []);
 
   const handleChange = ([startDay, endDay]: [Date | null, Date | null]) => {
-    setStartDate(startDay);
-    setEndDate(endDay);
+    onChange(startDay, endDay);
   };
 
   const maxDate =

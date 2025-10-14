@@ -4,6 +4,7 @@ import ArrowIcon from "@/assets/icons/arrow.svg?react";
 import VoltageIcon from "@/assets/icons/power.svg?react";
 import ClockIcon from "@/assets/icons/schedule.svg?react";
 import type { City } from "@/types";
+import Button from "../common/Button";
 
 interface CityDetailProps {
   city: City;
@@ -92,15 +93,10 @@ const CityDetail = ({ city }: CityDetailProps) => {
           className="w-[260px] rounded-10 ml-17"
         />
       </div>
-      <button
-        type="button"
-        className="flex items-center justify-center w-185 py-14 bg-black rounded-6"
-      >
-        <span className="ml-8 mr-5 text-white text-16 font-medium">
-          일정 만들기
-        </span>
+      <Button className="w-185">
+        <span className="ml-8 mr-5">일정 만들기</span>
         <ArrowIcon />
-      </button>
+      </Button>
     </div>
   );
 };

@@ -1,7 +1,10 @@
-import TravelDateSelector from "@/components/plan/TravelDateSelector";
+import TravelPeriodModal from "@/components/plan/TravelPeriodModal";
+import { usePlanStore } from "@/store";
 
 const PlanCity = () => {
-  return <TravelDateSelector />;
+  const { status } = usePlanStore();
+
+  if (status === "period_edit") return <TravelPeriodModal />;
 };
 
 export default PlanCity;

@@ -1,5 +1,5 @@
 .custom-datepicker {
-  @apply px-20 pt-36 pb-20 rounded-16 border-2 border-gray200 bg-bg2 overflow-hidden;
+  @apply block px-20 pt-36 pb-20 rounded-16 border-2 border-gray200 bg-bg2 overflow-hidden;
 }
 
 .custom-datepicker .react-datepicker__navigation {

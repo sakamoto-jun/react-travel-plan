@@ -4,16 +4,19 @@ import { create } from "zustand";
 interface State {
   startDate: Date | null;
   endDate: Date | null;
+  status: "period_edit" | "planning";
 }
 
 interface Action {
   setStartDate: (date: Date | null) => void;
   setEndDate: (date: Date | null) => void;
+  setStatus: (status: State["status"]) => void;
 }
 
-const store = create<State & Action>()((set) => ({
+const usePlanStore = create<State & Action>()((set) => ({
   startDate: null,
   endDate: null,
+  status: "period_edit",
   setStartDate: (date) => {
     if (!date) {
       set({ startDate: null, endDate: null });
@@ -33,6 +36,9 @@ const store = create<State & Action>()((set) => ({
       return { endDate: date };
     });
   },
+  setStatus: (status: State["status"]) => {
+    set({ status });
+  },
 }));
 
 type ModalComponent = FunctionComponent<{ onClose: () => void }>;
@@ -42,7 +48,7 @@ interface ModalState {
 }
 
 interface ModalAction {
-  openModal: (modal: FunctionComponent<{ onClose: () => void }>) => void;
+  openModal: (modal: ModalComponent) => void;
   closeModal: (index: number) => void;
 }
 
@@ -60,4 +66,4 @@ const useModalStore = create<ModalState & ModalAction>()((set) => ({
   },
 }));
 
-export { store, useModalStore };
+export { useModalStore, usePlanStore };

@@ -17,17 +17,15 @@ const CityList = ({ cities }: CityListProps) => {
       return (
         <Modal>
           <ModalBackdrop />
-          <ModalPanel>
-            <div className="relative w-[655px] min-h-[300px] pt-58 px-28 pb-37 rounded-20 border border-gray100 bg-white">
-              <button
-                type="button"
-                className="absolute top-22 right-28"
-                onClick={onClose}
-              >
-                <CloseIcon />
-              </button>
-              <CityDetail city={city} />
-            </div>
+          <ModalPanel className="w-[655px] min-h-[300px] pt-58 pb-37">
+            <button
+              type="button"
+              className="absolute top-22 right-28"
+              onClick={onClose}
+            >
+              <CloseIcon />
+            </button>
+            <CityDetail city={city} />
           </ModalPanel>
         </Modal>
       );
