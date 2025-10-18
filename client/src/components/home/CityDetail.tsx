@@ -102,12 +102,12 @@ const CityDetail = ({ city }: CityDetailProps) => {
 };
 
 // 헬퍼 함수
-const getTimeDiff = (cityOffset: number) => {
+function getTimeDiff(cityOffset: number) {
   const koreaOffset = 9; // UTC+9가 한국 기준
   const diff = cityOffset - koreaOffset;
 
   if (diff === 0) return "없음";
   return diff > 0 ? `+${diff}시간` : `${diff}시간`;
-};
+}
 
 export default CityDetail;

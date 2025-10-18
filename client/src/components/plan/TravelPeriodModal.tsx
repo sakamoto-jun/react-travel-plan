@@ -36,7 +36,7 @@ const TravelPeriodModal = () => {
         </div>
         <div className="flex justify-end">
           <Button
-            className="px-42"
+            className="max-w-120"
             onClick={handleConfirm}
             disabled={!startDate || !endDate}
           >

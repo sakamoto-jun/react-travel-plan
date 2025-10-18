@@ -14,6 +14,7 @@ const filters = [
     label: "해외",
   },
 ] as const;
+
 type Filter = (typeof filters)[number]["key"];
 
 interface FilterListProps {

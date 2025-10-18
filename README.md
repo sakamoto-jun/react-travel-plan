@@ -314,6 +314,95 @@ const getTimeDiff = (cityOffset: number) => {
 
 > ✅ 이제 서울/부산은 `"없음"`, 파리는 `-8시간`, 뉴욕은 `-14시간`, 시드니는 `+1시간`으로 정확하게 한국 기준 시차가 표시됨.
 
+## 14. 전역 로케일 설정 (date-fns + react-datepicker 통합)
+
+- **문제**: 기존에는 `date-fns`만 전역 로케일 설정을 해주었음.
+
+- **해결**: `date-fns + react-datepicker`의 로케일 설정을 한 번에 통합 관리.
+
+**Before**
+
+```ts
+// utils/date.ts
+import { setDefaultOptions } from "date-fns";
+import { ko } from "date-fns/locale";
+
+// ✅ date-fns 내부 함수들 (format, parse 등) 기본 로케일 설정
+setDefaultOptions({ locale: ko });
+```
+
+**After**
+
+```ts
+/// utils/date.ts
+import { setDefaultOptions } from "date-fns";
+import { ko } from "date-fns/locale";
+import { registerLocale, setDefaultLocale } from "react-datepicker";
+
+// ✅ date-fns 내부 함수들 (format, parse 등) 기본 로케일 설정
+setDefaultOptions({ locale: ko });
+
+// ✅ react-datepicker에 한국어 로케일 등록
+registerLocale("ko", ko);
+
+// ✅ react-datepicker의 기본 로케일을 'ko'로 지정
+setDefaultLocale("ko");
+```
+
+> ✅ 전역에서 한 번만 import (`main.tsx` 또는 `App.tsx` 상단):
+> `import "@/utils/date";`
+> 이후 모든 `format()`과 `<DatePicker />` 컴포넌트에 자동으로 한글 로케일이 적용됨.
+
+## 15. 시간 계산 헬퍼 함수 개선 및 성능 최적화 (`reduce + useMemo`)
+
+- **문제**:
+
+  기존에는 `"HH:MM"` 문자열을 분 단위로 변환하기 위해 `parseInt(time.slice(0, 2), 10)` 및 `parseInt(time.slice(3), 10)` 방식을 사용했음.
+
+  이 방식은 동작은 같지만 문자열 인덱스를 직접 다루어 가독성이 떨어지고, 유지보수가 불편하며 코드 의도가 한눈에 파악되지 않음.
+
+  또한 `dailyTimes` 배열의 총 시간을 계산하는 `reduce` 로직이 컴포넌트 렌더링마다 매번 재실행되어 불필요한 재계산이 발생하는 구조였음.
+
+- **해결**:
+
+  1. `split(':')`과 `map(Number)`를 활용한 직관적인 헬퍼 함수로 교체하여 `"시:분"` 포맷을 간단히 숫자 배열로 변환.
+  2. `useMemo`를 적용해 `dailyTimes` 값이 변경될 때만 `reduce` 연산이 수행되도록 최적화.
+
+     불필요한 재렌더링 시 계산을 방지함으로써 성능과 안정성을 동시에 확보.
+
+**Before**
+
+```ts
+const transformTimeToMinutes = (time: string) => {
+  return parseInt(time.slice(0, 2), 10) * 60 + parseInt(time.slice(3), 10);
+};
+```
+
+**After**
+
+```ts
+const { hours, minutes } = useMemo(() => {
+  const totalTime =
+    dailyTimes?.reduce((sum, { startTime, endTime }) => {
+      return sum + (toMinutes(endTime) - toMinutes(startTime));
+    }, 0) ?? 0;
+
+  const hours = Math.floor(totalTime / 60);
+  const minutes = totalTime % 60;
+
+  return { hours, minutes };
+}, [dailyTimes]);
+
+function toMinutes(time: string) {
+  const [hour, minute] = time.split(":").map(Number);
+  return hour * 60 + minute;
+}
+```
+
+> ✅ `useMemo`를 통해 `dailyTimes`가 변경되지 않으면 `reduce` 연산이 재실행되지 않음.
+>
+> ✅ 헬퍼 함수 `toMinutes`는 직관적이며, slice 인덱스 접근보다 유지보수가 용이함.
+
 ---
 
 # 🧭 시도 기록

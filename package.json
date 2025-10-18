@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"yarn dev:client\" \"yarn dev:server\"",
+    "dev": "chcp 65001 >NUL && concurrently \"yarn dev:client\" \"yarn dev:server\"",
     "dev:client": "vite",
     "dev:server": "vite-node --watch server/index.ts",
     "build": "tsc -b && vite build",

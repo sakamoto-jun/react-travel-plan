@@ -8,7 +8,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 const Home = () => {
-  // const {data} = useQuery(/* 국가필터, 검색필터 */);
   const [query, setQuery] = useState("");
   const { data, isLoading, error } = useQuery({
     queryKey: ["cities", query],

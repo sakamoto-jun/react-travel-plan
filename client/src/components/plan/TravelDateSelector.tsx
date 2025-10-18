@@ -1,5 +1,5 @@
 import LeftArrowIcon from "@/assets/icons/keyboard_arrow_left.svg?react";
-import { ko } from "date-fns/locale";
+import { format } from "date-fns";
 import { useMemo } from "react";
 import DatePicker, {
   type ReactDatePickerCustomHeaderProps,
@@ -39,7 +39,6 @@ const TravelDateSelector = ({ startDate, endDate, onChange }: Props) => {
       endDate={endDate}
       minDate={today}
       maxDate={maxDate}
-      locale={ko}
       onChange={handleChange}
       calendarClassName="custom-datepicker"
       dayClassName={(date) =>
@@ -65,10 +64,7 @@ const TravelDateSelector = ({ startDate, endDate, onChange }: Props) => {
             <LeftArrowIcon />
           </button>
           <span className="react-datepicker__current-month">
-            {monthDate.toLocaleString("ko-KR", {
-              month: "long",
-              year: "numeric",
-            })}
+            {format(monthDate, "yyyy년 MM월")}
           </span>
           <button
             aria-label="Next Month"
