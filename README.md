@@ -349,25 +349,20 @@ registerLocale("ko", ko);
 setDefaultLocale("ko");
 ```
 
-> ✅ 전역에서 한 번만 import (`main.tsx` 또는 `App.tsx` 상단):
-> `import "@/utils/date";`
-> 이후 모든 `format()`과 `<DatePicker />` 컴포넌트에 자동으로 한글 로케일이 적용됨.
+> ✅ 전역에서 한 번만 import (`main.tsx` 또는 `App.tsx` 상단):<br/> > `import "@/utils/date";` 이후 모든 `format()`과 `<DatePicker />` 컴포넌트에 자동으로 한글 로케일이 적용됨.
 
 ## 15. 시간 계산 헬퍼 함수 개선 및 성능 최적화 (`reduce + useMemo`)
 
 - **문제**:
 
-  기존에는 `"HH:MM"` 문자열을 분 단위로 변환하기 위해 `parseInt(time.slice(0, 2), 10)` 및 `parseInt(time.slice(3), 10)` 방식을 사용했음.
-
-  이 방식은 동작은 같지만 문자열 인덱스를 직접 다루어 가독성이 떨어지고, 유지보수가 불편하며 코드 의도가 한눈에 파악되지 않음.
-
+  기존에는 `"HH:MM"` 문자열을 분 단위로 변환하기 위해 `parseInt(time.slice(0, 2), 10)` 및 `parseInt(time.slice(3), 10)` 방식을 사용했음.<br/>
+  이 방식은 동작은 같지만 문자열 인덱스를 직접 다루어 가독성이 떨어지고, 유지보수가 불편하며 코드 의도가 한눈에 파악되지 않음.<br/>
   또한 `dailyTimes` 배열의 총 시간을 계산하는 `reduce` 로직이 컴포넌트 렌더링마다 매번 재실행되어 불필요한 재계산이 발생하는 구조였음.
 
 - **해결**:
 
   1. `split(':')`과 `map(Number)`를 활용한 직관적인 헬퍼 함수로 교체하여 `"시:분"` 포맷을 간단히 숫자 배열로 변환.
-  2. `useMemo`를 적용해 `dailyTimes` 값이 변경될 때만 `reduce` 연산이 수행되도록 최적화.
-
+  2. `useMemo`를 적용해 `dailyTimes` 값이 변경될 때만 `reduce` 연산이 수행되도록 최적화.<br/>
      불필요한 재렌더링 시 계산을 방지함으로써 성능과 안정성을 동시에 확보.
 
 **Before**
@@ -399,11 +394,182 @@ function toMinutes(time: string) {
 }
 ```
 
-> ✅ `useMemo`를 통해 `dailyTimes`가 변경되지 않으면 `reduce` 연산이 재실행되지 않음.
->
+> ✅ `useMemo`를 통해 `dailyTimes`가 변경되지 않으면 `reduce` 연산이 재실행되지 않음.<br/>
 > ✅ 헬퍼 함수 `toMinutes`는 직관적이며, slice 인덱스 접근보다 유지보수가 용이함.
 
+## 16. 구글맵 로딩 구조 개선 (`LoadScript` -> `useJsApiLoader`)
+
+- **문제**:
+
+  기존에는 구글맵 로드 시 다음과 같은 형태로 `<LoadScript>` 컴포넌트를 사용.
+
+  ```tsx
+  <LoadScript googleMapsApiKey={API_KEY}>
+    <GoogleMap
+      mapContainerClassName="w-full h-full"
+      center={center}
+      zoom={10}
+    ></GoogleMap>
+  </LoadScript>
+  ```
+
+  이 방식은 동작에는 문제가 없지만,
+
+  - 매 렌더링마다 스크립트 로딩 여부를 내부적으로 관리해야 됨.
+  - SSR 환경(예: Next.js)에서 호환성이 떨어짐.
+  - 로드 완료 시점을 명확하게 제어하기 어렵다는 한계가 존재.
+
+  또한, 로딩 상태(`isLoaded`)를 별도로 확인하기 어려워 조건부 렌더링 제어나 로딩 스피너 처리 같은 실무적 대응이 불편하였음
+
+- **해결**:
+
+  1. `@react-google-maps/api`에서 제공하는 `useJsApiLoader`훅을 사용하여 스크립트 로드 상태를 명시적으로 관리하도록 변경.
+  2. `isLoaded`상태를 통해 로딩 완료 후에만 지도 컴포넌트가 렌더링하도록 제어.
+  3. 성능, 가독성, SSR 호환성이 개선되고, 추후 기능 확장성(마커, 오토컴플리트, 경로 표시 등)도 확보 가능.
+
+**Before**
+
+```tsx
+const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+<LoadScript googleMapsApiKey={API_KEY}>
+  <GoogleMap
+    mapContainerClassName="w-full h-full"
+    center={center}
+    zoom={10}
+  ></GoogleMap>
+</LoadScript>;
+```
+
+**After**
+
+```tsx
+import { GoogleMap, useJsApiLoader } from "@react-google-maps/api";
+
+const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+function MyMap() {
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: API_KEY,
+  });
+
+  if (!isLoaded) return <div>로딩 중...</div>;
+
+  return (
+    <GoogleMap
+      mapContainerClassName="w-full h-full"
+      center={center}
+      zoom={10}
+    />
+  );
+}
+```
+
+## 17. React Query 조건부 요청 및 로딩 구조 개선 (`useParams` + `enabled`)
+
+- **문제**:  
+  기존 코드에서는 `cityCode` 값이 비어 있어도 `useQuery`가 항상 실행되어  
+  불필요한 API 요청이 발생함.  
+  또한 로딩(`isLoading`)과 데이터 유무(`!data`) 조건을 함께 묶어  
+  UI 상태 분기가 불명확하고, 에러 처리(`error`)도 누락되어 있었음.
+
+- **해결**:  
+  `React Query`의 `enabled` 옵션을 사용하여  
+  **`cityCode`가 존재할 때만 쿼리를 활성화**하도록 개선함.  
+  또한 `isLoading`, `error`, `!data` 상태를 명확히 분기하여  
+  UI 렌더링 흐름이 더 직관적이고 안전하게 변경됨.
+
 ---
+
+### **Before**
+
+```tsx
+const PlanCity = () => {
+  const { city: cityCode = "" } = useParams();
+  const { status } = usePlanStore();
+  const { data, isLoading } = useQuery({
+    queryKey: ["city", cityCode],
+    queryFn: () => getCity(cityCode),
+  });
+
+  return (
+    <>
+      {status === "period_edit" && <TravelPeriodModal />}
+      <WideLayout>
+        {isLoading || !data ? (
+          <Loading />
+        ) : (
+          <div className="flex h-full">
+            <PlanController />
+            <div className="flex-1 bg-gray300">
+              <Map center={data.coordinates} />
+            </div>
+          </div>
+        )}
+      </WideLayout>
+    </>
+  );
+};
+```
+
+---
+
+### **After**
+
+```tsx
+const PlanCity = () => {
+  const { city: cityCode } = useParams();
+  const { status } = usePlanStore();
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["city", cityCode],
+    queryFn: () => getCity(cityCode!),
+    enabled: !!cityCode, // ✅ cityCode가 존재할 때만 요청 실행
+  });
+
+  // ✅ 상태 분기 명확화
+  if (isLoading) return <Loading />;
+  if (error) return <div>에러가 발생했습니다 😭</div>;
+  if (!data) return null;
+
+  return (
+    <>
+      {status === "period_edit" && <TravelPeriodModal />}
+      <WideLayout>
+        <div className="flex h-full">
+          <PlanController />
+          <div className="flex-1 bg-gray300">
+            <Map center={data.coordinates} />
+          </div>
+        </div>
+      </WideLayout>
+    </>
+  );
+};
+```
+
+---
+
+### **핵심 개선 효과**
+
+| 개선 포인트            | 설명                                           |
+| ---------------------- | ---------------------------------------------- |
+| ✅ `enabled` 옵션 적용 | cityCode 존재 여부에 따라 쿼리 실행 제어       |
+| ✅ 에러 상태 처리 추가 | `error` 분기로 사용자에게 명확한 피드백 제공   |
+| ✅ 로딩 구조 분리      | `isLoading`, `error`, `!data` 상태를 개별 처리 |
+| ✅ 타입 안정성 향상    | `cityCode!`를 통한 TypeScript 단언 명확화      |
+| ✅ 유지보수성 개선     | UI 렌더링 흐름이 직관적이고 디버깅이 쉬움      |
+
+---
+
+> 💡 **정리:**  
+> `enabled`는 React Query에서 “조건부 데이터 요청” 시 필수적으로 사용하는 옵션으로,  
+> 의존성(`cityCode`)이 준비되지 않은 상태에서 API 호출을 방지하는 가장 안전한 방법이다.
+
+> ✅ 명시적 로딩 제어(`isLoaded` 조건부 렌더링)<br/>
+> ✅ SSR 환경 호환성 고려<br/>
+> ✅ 불필요한 스크립트 중복 로드 방지<br/>
+> ✅ 확장 기능 적용시 더 직관적인 코드 구조<br/>
 
 # 🧭 시도 기록
 
