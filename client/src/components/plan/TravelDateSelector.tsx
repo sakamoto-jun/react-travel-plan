@@ -52,6 +52,7 @@ const TravelDateSelector = ({ startDate, endDate, onChange }: Props) => {
       }: ReactDatePickerCustomHeaderProps) => (
         <div className="flex justify-between items-center">
           <button
+            type="button"
             aria-label="Previous Month"
             className={
               "react-datepicker__navigation react-datepicker__navigation--previous"
@@ -67,6 +68,7 @@ const TravelDateSelector = ({ startDate, endDate, onChange }: Props) => {
             {format(monthDate, "yyyy년 MM월")}
           </span>
           <button
+            type="button"
             aria-label="Next Month"
             className={
               "react-datepicker__navigation react-datepicker__navigation--next"

@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { useMemo, useState } from "react";
 import Button from "../common/Button";
 
-const DailyTimeSelector = () => {
+const StepDateConfirm = ({ onNext: onCompleted }: { onNext: () => void }) => {
   const [hidden, setHidden] = useState(false);
 
   const { dailyTimes, setDailyTimes } = usePlanStore();
@@ -30,6 +30,7 @@ const DailyTimeSelector = () => {
           {`총 ${hours}시간 ${String(minutes).padStart(2, "0")}분`}
         </span>
         <button
+          type="button"
           className={clsx(
             "transition-transform duration-200",
             !hidden && "rotate-180"
@@ -98,7 +99,9 @@ const DailyTimeSelector = () => {
                 </tbody>
               </table>
             </div>
-            <Button className="max-w-185">시간 설정 완료</Button>
+            <Button className="max-w-185" onClick={onCompleted}>
+              시간 설정 완료
+            </Button>
           </div>
         </>
       )}
@@ -113,4 +116,4 @@ function toMinutes(time: string) {
   return hour * 60 + minute;
 }
 
-export default DailyTimeSelector;
+export default StepDateConfirm;
