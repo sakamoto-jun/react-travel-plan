@@ -1,6 +1,6 @@
 import express from "express";
-import { citiesDB, countriesDB } from "../db";
-import type { City, Country } from "../types";
+import { citiesDB, countriesDB, placesDB } from "../db";
+import type { City, Country, Place } from "../types";
 
 interface CitiesWithCountry extends City {
   country: Country | null; // 국가 정보 추가 (없으면 null)
@@ -15,6 +15,7 @@ interface CityOrQuery {
 // city 라우터 생성
 const cityRouter = express.Router();
 
+// 도시 리스트
 cityRouter.get("/", (_req, res) => {
   citiesDB.find({}, (err: Error | null, cities: City[]) => {
     if (err) return res.status(500).send(err);
@@ -34,11 +35,42 @@ cityRouter.get("/", (_req, res) => {
   });
 });
 
-cityRouter.get("/search", (req, res) => {
-  const { query } = req.query;
+// 도시 등록
+cityRouter.post("/", (req, res) => {
+  const { _id, code, countryCode, ...rest } = req.body;
 
-  if (typeof query !== "string") {
+  if (!code) {
+    return res.status(400).send({ message: "City code is required" });
+  }
+  if (!countryCode) {
+    return res.status(400).send({ message: "Country code is required" });
+  }
+
+  const city = {
+    ...rest,
+    code: code.toLowerCase(),
+    countryCode: countryCode.toUpperCase(),
+  } as City;
+
+  citiesDB.insert(city, (err: Error | null, newCity: City) => {
+    if (err) {
+      return res.status(500).send(err);
+    }
+
+    return res.send(newCity);
+  });
+});
+
+// 도시 검색
+cityRouter.get("/search", (req, res) => {
+  const { query } = req.query as { query?: string };
+
+  if (query && typeof query !== "string") {
     return res.status(400).send("Invalid query");
+  }
+
+  if (!query) {
+    return res.send([]);
   }
 
   countriesDB.find({}, (err: Error | null, countries: Country[]) => {
@@ -74,16 +106,13 @@ cityRouter.get("/search", (req, res) => {
   });
 });
 
+// 도시 데이터
 cityRouter.get("/:cityCode", (req, res) => {
   citiesDB.findOne(
     { code: req.params.cityCode.toLowerCase() },
     (err: Error | null, city: City | null) => {
-      if (err) {
-        return res.status(500).send(err);
-      }
-      if (!city) {
-        return res.status(404).send({ message: "City not found" });
-      }
+      if (err) return res.status(500).send(err);
+      if (!city) return res.status(404).send({ message: "City not found" });
 
       countriesDB.findOne(
         { code: city.countryCode },
@@ -98,29 +127,53 @@ cityRouter.get("/:cityCode", (req, res) => {
   );
 });
 
-cityRouter.post("/", (req, res) => {
-  const { _id, code, countryCode, ...rest } = req.body;
+// 장소 리스트
+cityRouter.get("/:cityCode/places", (req, res) => {
+  const cityCode = req.params.cityCode.toLowerCase();
+  const { category, q } = req.query as {
+    category?: Place["category"];
+    q?: string;
+  };
 
-  if (!code) {
-    return res.status(400).send({ message: "City code is required" });
+  if (typeof cityCode !== "string") {
+    return res.status(400).send({ message: "Invalid city code" });
   }
-  if (!countryCode) {
-    return res.status(400).send({ message: "Country code is required" });
+  if (category && typeof category !== "string") {
+    return res.status(400).send({ message: "Invalid category" });
+  }
+  if (q && typeof q !== "string") {
+    return res.status(400).send({ message: "Invalid query" });
   }
 
-  const city = {
-    ...rest,
-    code: code.toLowerCase(),
-    countryCode: countryCode.toUpperCase(),
-  } as City;
+  const placesQuery = {
+    cityCode,
+    ...(category ? { category } : {}),
+    ...(q ? { name: new RegExp(q, "i") } : {}),
+  }; // undefined 조건 제거
 
-  citiesDB.insert(city, (err: Error | null, newCity: City) => {
-    if (err) {
-      return res.status(500).send(err);
-    }
+  placesDB.find(placesQuery, (err: Error | null, places: Place[] | null) => {
+    if (err) return res.status(500).send(err);
+    if (!places) return res.status(400).send({ message: "Place not found" });
 
-    return res.send(newCity);
+    return res.send(places);
   });
+});
+
+// 장소 등록
+cityRouter.post("/:cityCode/places", (req, res) => {
+  const place = req.body as Place;
+  const cityCode = req.params.cityCode.toLowerCase();
+
+  placesDB.insert(
+    { ...place, cityCode },
+    (err: Error | null, newPlace: Place) => {
+      if (err) {
+        return res.status(500).send(err);
+      }
+
+      return res.send(newPlace);
+    }
+  );
 });
 
 // 유틸 함수

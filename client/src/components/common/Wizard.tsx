@@ -37,7 +37,7 @@ const Wizard = ({ steps, children }: PropsWithChildren<WizardProps>) => {
       />
 
       {/* 우측 컨텐츠 영역 */}
-      <div className="flex-1 flex-col px-24 py-30">
+      <div className="flex-1 flex flex-col px-24 py-30">
         {children}
         <CurrentComponent onNext={onNext} />
       </div>

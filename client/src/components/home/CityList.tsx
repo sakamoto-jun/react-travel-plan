@@ -34,19 +34,25 @@ const CityList = ({ cities }: CityListProps) => {
 
   return (
     <div className="w-full flex flex-wrap justify-between gap-y-28 ">
-      {cities.map((city) => (
-        <button
-          type="button"
-          key={city._id}
-          onClick={() => openDetailModal(city)}
-        >
-          <Card
-            title={city.nameEn}
-            description={`${city.country.name} ${city.name}`}
-            image={city.thumbnail}
-          />
-        </button>
-      ))}
+      {cities.length > 0 ? (
+        cities.map((city) => (
+          <button
+            type="button"
+            key={city._id}
+            onClick={() => openDetailModal(city)}
+          >
+            <Card
+              title={city.nameEn}
+              description={`${city.country.name} ${city.name}`}
+              image={city.thumbnail}
+            />
+          </button>
+        ))
+      ) : (
+        <p className="w-full text-center text-gray500 py-40">
+          검색 결과가 없습니다 😢
+        </p>
+      )}
     </div>
   );
 };

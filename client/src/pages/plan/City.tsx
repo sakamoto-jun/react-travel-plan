@@ -14,7 +14,7 @@ const PlanCity = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["city", cityCode],
     queryFn: () => getCity(cityCode!),
-    enabled: !!cityCode,
+    enabled: Boolean(cityCode),
   });
 
   if (isLoading) return <Loading />;

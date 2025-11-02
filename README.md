@@ -652,8 +652,6 @@ const Wizard = ({ steps }: WizardProps) => {
 | **[2] 렌더링**    | `<CurrentComponent onNext={onNext} />` → JSX 문법으로 표준 렌더링                         |
 | **[3] 이동 처리** | `onNext()` 호출 시 `currentStep` 증가 → 다음 스텝으로 이동                                |
 
----
-
 #### 요약
 
 > **React.ComponentType + JSX 렌더링 방식으로 변경하여,**
@@ -710,6 +708,253 @@ const Wizard = ({ steps }: WizardProps) => {
   {step.title}
 </button>
 ```
+
+---
+
+### 8. 검색 UX 개선: IME(한글 입력) 처리 + Debounce + React Query, 조건부 랜더 최적화
+
+#### 문제
+
+기존 구현에서는 `useThrottle`을 사용하여 입력 이벤트를 제어하였으나 다음과 같은 문제가 있었다.
+
+- **한글 IME 입력 처리 문제**
+
+  - 한글 조합 중(`composing`) 검증 부족으로 발생
+
+- **Throttle 부적합**
+
+  - 검색은 “입력이 멈췄을 때” 실행되는 **Debounce**가 더 적합
+  - Throttle은 “일정 주기 실행”으로 검색 UX와 맞지 않음
+
+- **React Query 플리커 발생 가능성**
+
+  - 검색마다 재요청 → 로딩 / 비어 있는 리스트 깜빡임(flicker)
+
+- **`isLoading`, `error`, `data` 조건부 처리 리랜더로 인한 Input 영역 상태값 초기화**
+  - Input의 상태값 변경으로 JSX 전체가 리랜더되어 검색 도중에 검색어가 사라짐
+
+```tsx
+// ⛔ Before
+
+// useThrottle.ts
+function useThrottle() {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  return (callback: () => void, ms: number) => {
+    if (timer.current) return;
+
+    timer.current = setTimeout(() => {
+      callback();
+      timer.current = null;
+    }, ms);
+  };
+}
+
+// SearchInput.tsx
+const SearchInput = ({
+  className,
+  placeholder = "검색",
+  onSearch,
+}: SearchInputProps) => {
+  const [search, setSearch] = useState("");
+  const throttle = useThrottle();
+
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
+    const v = e.currentTarget.value;
+    setSearch(v);
+    throttle(() => {
+      onSearch(v);
+    }, 300);
+  };
+
+  return (
+    <div className={clsx("relative w-full", className)}>
+      <input
+        className="pl-12 pr-46 w-full h-full bg-bg2 outline-none border border-gray200 rounded-10"
+        type="text"
+        placeholder={placeholder}
+        value={search}
+        onChange={handleSearch}
+      />
+      <SearchIcon className="absolute right-12 top-1/2 -translate-y-1/2" />
+    </div>
+  );
+};
+
+// Home.tsx
+const Home = () => {
+  const [query, setQuery] = useState("");
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["cities", query],
+    queryFn: () => {
+      if (query) {
+        return searchCities(query);
+      } else {
+        return getCities();
+      }
+    },
+  });
+
+  if (isLoading) return <Loading />;
+  if (error) return <div>에러가 발생했습니다 😭</div>;
+  if (!data) return null;
+
+  return (
+    <NarrowLayout className="flex flex-col items-center py-30">
+      <SearchInput
+        className="max-w-[340px] h-40 mb-24"
+        placeholder="도시, 국가, 지역으로 검색"
+        onSearch={(q) => setQuery(q)}
+      />
+      <div className="mb-21">
+        <FilterList selectedFilter="all" onChange={() => {}} />
+      </div>
+      <CityList cities={data} />
+    </NarrowLayout>
+  );
+};
+```
+
+#### 해결
+
+검색 관련 UX를 개선하기 위해 다음 작업을 진행하였다.
+
+- **`isComposing` 상태 도입 및 IME 이벤트 분리 처리**
+
+  - `compositionStart`, `compositionEnd` 이벤트로 한글 조합 중 여부를 판단
+  - IME 조합 중에는 검색 요청 차단
+  - 조합 완료 시 확정된 문자열로만 검색 실행
+
+- **`useDebounce` 훅 도입**
+
+  - 입력이 끝난 뒤 일정 시간 후 검색 되도록 변경
+  - 빠른 입력 중 불필요한 요청 차단하고 UX 부드럽게 개선
+
+- **Query Key에 `debouncedQuery` 적용**
+
+  - `["cities", debouncedQuery]`, `["places", cityCode, debouncedQuery, filterType]`
+  - Debounced 값 기반 refetch로 불필요한 요청 최소화
+
+- **React Query `staleTime` 추가**
+
+  - 짧은 시간 동안 캐싱하여 재검색 시 flicker 없이 UI 유지
+  - 사용자 경험 개선
+
+- **`isLoading`, `error`, `data` 조건부 처리 최적화**
+  - React Query 상태별 `return` 분기 대신  
+    Input은 항상 렌더, 리스트만 조건부 렌더링하여  
+    Input 상태 유지 + flicker 방지 + 검색 중 타이핑 UX 보장
+
+```tsx
+// ✅ After
+
+// useDebounce.ts
+function useDebounce<T>(value: T, delay: number = 300) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+// SearchInput.tsx
+const SearchInput = ({
+  className,
+  placeholder = "검색",
+  onSearch,
+}: SearchInputProps) => {
+  const [search, setSearch] = useState("");
+  const [isComposing, setIsComposing] = useState(false);
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.currentTarget.value;
+    setSearch(value);
+
+    if (value === "") {
+      onSearch("");
+    }
+  };
+
+  const handleCompositionStart = () => {
+    setIsComposing(true);
+  };
+
+  const handleCompositionEnd = (e: CompositionEvent<HTMLInputElement>) => {
+    setIsComposing(false);
+    onSearch(e.currentTarget.value);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !isComposing) {
+      onSearch(search);
+    }
+  };
+
+  return (
+    <div className={clsx("relative w-full", className)}>
+      <input
+        className="pl-12 pr-46 w-full h-full bg-bg2 outline-none border border-gray200 rounded-10"
+        type="text"
+        placeholder={placeholder}
+        value={search}
+        onChange={handleChange}
+        onCompositionStart={handleCompositionStart}
+        onCompositionEnd={handleCompositionEnd}
+        onKeyDown={handleKeyDown}
+      />
+      <SearchIcon className="absolute right-12 top-1/2 -translate-y-1/2" />
+    </div>
+  );
+};
+
+// Home.tsx
+const Home = () => {
+  const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["cities", debouncedQuery],
+    queryFn: () => {
+      if (debouncedQuery) {
+        return searchCities(debouncedQuery);
+      } else {
+        return getCities();
+      }
+    },
+    staleTime: 5000,
+  });
+
+  return (
+    <NarrowLayout className="flex flex-col items-center py-30">
+      <SearchInput
+        className="max-w-[340px] h-40 mb-24"
+        placeholder="도시, 국가, 지역으로 검색"
+        onSearch={(q) => setQuery(q)}
+      />
+      <div className="mb-21">
+        <FilterList selectedFilter="all" onChange={() => {}} />
+      </div>
+      {isLoading && <Loading />}
+      {!isLoading && error && <div>에러가 발생했습니다 😭</div>}
+      {!isLoading && !error && data && <CityList cities={data} />}
+    </NarrowLayout>
+  );
+};
+```
+
+### 요약
+
+> **검색 컴포넌트는 입력 UI와 검색 정책을 분리해야 한다.**  
+> Input = 단순 입력, Debounce/React Query = 상위 레이어 로직
 
 ---
 
