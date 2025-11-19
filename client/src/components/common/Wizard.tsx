@@ -37,7 +37,7 @@ const Wizard = ({ steps, children }: PropsWithChildren<WizardProps>) => {
       />
 
       {/* 우측 컨텐츠 영역 */}
-      <div className="flex-1 flex flex-col px-24 py-30">
+      <div className="relative flex-1 flex flex-col px-24 py-30">
         {children}
         <CurrentComponent onNext={onNext} />
       </div>
@@ -48,7 +48,7 @@ const Wizard = ({ steps, children }: PropsWithChildren<WizardProps>) => {
 const Steps = ({ steps, currentStep, onChangeStep }: StepsProps) => {
   return (
     <div className="px-20 py-50 flex flex-col items-center justify-between">
-      <ul className="w-78 mx-8 flex flex-col gap-y-30 text-left">
+      <ul className="w-78 mx-8 flex flex-col gap-y-30">
         {steps.map((step, index) => {
           const isActive = index === currentStep;
           const isCompleted = index < currentStep;
@@ -58,7 +58,7 @@ const Steps = ({ steps, currentStep, onChangeStep }: StepsProps) => {
               <button
                 type="button"
                 className={clsx(
-                  "text-15 font-semibold leading-normal transition-colors duration-200",
+                  "text-left text-15 font-semibold leading-normal transition-colors duration-200",
                   isCompleted && "text-main/60 line-through",
                   isActive ? "text-main" : "text-gray300"
                 )}

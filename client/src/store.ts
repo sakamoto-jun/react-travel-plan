@@ -1,12 +1,18 @@
 import { addDays, differenceInDays } from "date-fns";
 import type { FunctionComponent } from "react";
 import { create } from "zustand";
+import type { Place } from "./types";
+import { exceedsTotalAvailableTime } from "./utils/time";
 
 interface State {
   startDate: Date | null;
   endDate: Date | null;
   status: "period_edit" | "planning";
   dailyTimes: { startTime: string; endTime: string; date: Date }[];
+  plannedPlaces: {
+    place: Place;
+    duration: number; // 분으로 처리
+  }[];
 }
 
 interface Action {
@@ -18,6 +24,9 @@ interface Action {
     time: string,
     type: "startTime" | "endTime"
   ) => void;
+  addPlannedPlace: (place: Place, duration?: number) => void;
+  removePlannedPlace: (index: number) => void;
+  setDurationForPlannedPlace: (index: number, duration: number) => void;
 }
 
 const usePlanStore = create<State & Action>()((set, get) => ({
@@ -25,6 +34,7 @@ const usePlanStore = create<State & Action>()((set, get) => ({
   endDate: null,
   status: "period_edit",
   dailyTimes: [],
+  plannedPlaces: [],
   setStartDate: (date) => {
     if (!date) {
       set({ startDate: null, endDate: null });
@@ -52,6 +62,7 @@ const usePlanStore = create<State & Action>()((set, get) => ({
       if (state.startDate && date < state.startDate) {
         return { endDate: null, dailyTimes: [] };
       }
+
       return { endDate: date, dailyTimes };
     });
   },
@@ -64,7 +75,45 @@ const usePlanStore = create<State & Action>()((set, get) => ({
         ...dailyTime,
         [type]: i === index ? time : dailyTime[type],
       }));
+
       return { dailyTimes: updatedDailyTimes };
+    });
+  },
+  addPlannedPlace: (place, duration = 120) => {
+    set((state) => {
+      if (state.plannedPlaces.some((p) => p.place.name === place.name)) {
+        return state;
+      }
+
+      const updatedPlaces = [...state.plannedPlaces, { place, duration }];
+      if (exceedsTotalAvailableTime(updatedPlaces, state.dailyTimes)) {
+        alert("총 여행 가능 시간보다 머무는 시간이 많습니다.");
+        return state;
+      }
+
+      return { plannedPlaces: updatedPlaces };
+    });
+  },
+  removePlannedPlace: (index) => {
+    set((state) => {
+      return {
+        plannedPlaces: state.plannedPlaces.filter((_, i) => i !== index),
+      };
+    });
+  },
+  setDurationForPlannedPlace: (index, duration) => {
+    set((state) => {
+      const updatedPlaces = state.plannedPlaces.map((place, i) =>
+        i === index ? { ...place, duration } : place
+      );
+      if (exceedsTotalAvailableTime(updatedPlaces, state.dailyTimes)) {
+        alert("총 여행 가능 시간보다 머무는 시간이 많습니다.");
+        return state;
+      }
+
+      return {
+        plannedPlaces: updatedPlaces,
+      };
     });
   },
 }));

@@ -12,7 +12,7 @@ const PlanSteps = () => {
 
   return (
     <div className="px-20 py-50 flex flex-col items-center justify-between">
-      <ul className="w-78 mx-8 flex flex-col gap-y-30 text-left">
+      <ul className="w-78 mx-8 flex flex-col gap-y-30">
         {steps.map((step, index) => {
           const isActive = index === currentStep;
 

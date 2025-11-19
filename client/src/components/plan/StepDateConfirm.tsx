@@ -1,5 +1,10 @@
 import UpArrowIcon from "@/assets/icons/keyboard_arrow_up.svg?react";
 import { usePlanStore } from "@/store";
+import {
+  convertMinutesToTime,
+  convertTimeToMinutes,
+  formatTimeUnit,
+} from "@/utils/time";
 import clsx from "clsx";
 import { format } from "date-fns";
 import { useMemo, useState } from "react";
@@ -13,21 +18,23 @@ const StepDateConfirm = ({ onNext: onCompleted }: { onNext: () => void }) => {
   const { hours, minutes } = useMemo(() => {
     const totalTime =
       dailyTimes?.reduce((sum, { startTime, endTime }) => {
-        return sum + (toMinutes(endTime) - toMinutes(startTime));
+        return (
+          sum +
+          (convertTimeToMinutes(endTime) - convertTimeToMinutes(startTime))
+        );
       }, 0) ?? 0;
 
-    const hours = Math.floor(totalTime / 60);
-    const minutes = totalTime % 60;
+    const time = convertMinutesToTime(totalTime);
 
-    return { hours, minutes };
+    return time;
   }, [dailyTimes]);
 
   return (
-    <div className="w-[368px] flex flex-col gap-y-18 text-left">
-      <p className="flex gap-x-16 text-17 font-medium tracking-[0.17px]">
+    <div className="w-[368px] flex flex-col gap-y-18">
+      <p className="flex items-center gap-x-16 text-17 font-medium tracking-[0.17px]">
         <span>여행시간 상세설명</span>
         <span className="text-[#5A88FF]">
-          {`총 ${hours}시간 ${String(minutes).padStart(2, "0")}분`}
+          {`총 ${hours}시간 ${formatTimeUnit(minutes)}분`}
         </span>
         <button
           type="button"
@@ -108,12 +115,5 @@ const StepDateConfirm = ({ onNext: onCompleted }: { onNext: () => void }) => {
     </div>
   );
 };
-
-// 헬퍼 함수
-function toMinutes(time: string) {
-  const [hour, minute] = time.split(":").map(Number);
-
-  return hour * 60 + minute;
-}
 
 export default StepDateConfirm;

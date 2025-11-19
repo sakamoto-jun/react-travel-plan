@@ -1,5 +1,6 @@
 import useDebounce from "@/hooks/useDebounce";
 import { getPlaces } from "@/services/plan";
+import { usePlanStore } from "@/store";
 import type { Place } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -12,6 +13,8 @@ import PlaceList from "./PlaceList";
 const PlaceContainer = () => {
   const [queryValue, setQueryValue] = useState("");
   const [filterType, setFilterType] = useState<Place["category"] | null>(null);
+
+  const { addPlannedPlace } = usePlanStore();
 
   const debouncedQueryValue = useDebounce(queryValue);
 
@@ -54,7 +57,12 @@ const PlaceContainer = () => {
       {!isLoading && error && (
         <div className="text-gray400 text-14">에러가 발생했습니다 😭</div>
       )}
-      {!isLoading && !error && data && <PlaceList places={data} />}
+      {!isLoading && !error && data && (
+        <PlaceList
+          places={data}
+          onAddPlace={(place: Place) => addPlannedPlace(place)}
+        />
+      )}
     </div>
   );
 };

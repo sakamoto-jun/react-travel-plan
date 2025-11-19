@@ -8,8 +8,8 @@ interface Props {
 
 const PlanControllerHeader = ({ startDate, endDate }: Props) => {
   return (
-    <div className="mb-18 flex flex-col gap-y-18 leading-none">
-      <h2 className="text-35 font-bold text-left">도쿄</h2>
+    <div className="mb-18 flex flex-col gap-y-18">
+      <h2 className="text-35 font-bold">도쿄</h2>
       {startDate && endDate && (
         <div className="flex items-center gap-x-8">
           <span className="text-17 font-medium tracking-[0.17px]">{`${format(

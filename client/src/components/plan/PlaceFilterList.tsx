@@ -20,7 +20,7 @@ const PlaceFilterList = ({ filterType, onChangeFilter }: Props) => {
             <button
               type="button"
               className={clsx(
-                "px-10 py-7 border rounded-3 text-15 tracking-[0.15px] leading-none",
+                "px-10 py-7 border rounded-3 text-15 tracking-[0.15px]",
                 isActive && "text-main border-main",
                 !isActive && "text-gray600 border-gray100"
               )}

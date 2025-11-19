@@ -59,6 +59,181 @@ setEndDate: (date) => {
 
 ---
 
+### 3. 장소 중복 추가 방지 로직 개선 (`addPlannedPlace`)
+
+#### 문제
+
+기존 `addPlannedPlace` 함수는 **이미 추가된 장소를 다시 추가할 수 있는 문제**가 있었다.  
+같은 장소를 여러 번 클릭하면 `plannedPlaces` 배열에 중복 항목이 쌓이면서  
+UI, 시간 계산, 삭제 로직 등에서 **데이터 불일치와 버그**가 발생했다.
+
+```ts
+// ⛔ Before: 중복 검증 부재로 같은 장소를 여러 번 추가 가능
+
+addPlannedPlace: (place, duration = 120) => {
+  set((state) => ({
+    // ❌ 문제: 중복 검사 없이 항상 새 항목 추가
+    plannedPlaces: [...state.plannedPlaces, { place, duration }],
+  }));
+};
+```
+
+#### 해결
+
+`some()` 메서드를 사용하여 **이미 존재하는 장소인지 검사**하고,  
+중복 시에는 상태를 그대로 반환하며, 중복이 아닐 경우에만 새 장소를 추가하도록 개선하였다.
+추가로 `duration`의 기본값을 외부 컴포넌트가 아닌 스토어 로직에서 처리하였다.
+
+```ts
+// ✅ After: 중복 검사 로직 추가로 동일 장소 중복 추가 방지
+
+addPlannedPlace: (place, duration = 120) => {
+  set((state) => {
+    // [1] 기존 plannedPlaces 배열에서 동일한 place.name이 있는지 검사
+    if (state.plannedPlaces.some((p) => p.place.name === place.name)) {
+      // [2] 중복이면 그대로 반환 → 상태 변화 없음 (렌더링 최소화)
+      return { plannedPlaces: state.plannedPlaces };
+    }
+
+    // [3] 중복이 아닐 경우 새 장소를 배열에 추가
+    return {
+      plannedPlaces: [...state.plannedPlaces, { place, duration }],
+    };
+  });
+};
+```
+
+#### 요약
+
+> **중복 데이터는 상태 불안정의 주요 원인이다.**  
+> `.some()`으로 기존 리스트를 검사하여 중복 추가를 차단함으로써  
+> `plannedPlaces`의 데이터 무결성과 UI 안정성을 모두 확보하였다.
+
+---
+
+### 4. 총 여행 시간 초과 검증 로직 추가 및 유틸 함수 분리 (`addPlannedPlace`, `setDurationForPlannedPlace`)
+
+#### 문제
+
+기존 `addPlannedPlace` 및 `setDurationForPlannedPlace` 함수에서는  
+**총 머무는 시간(plannedTotal)** 이 **총 여행 가능 시간(totalAvailable)** 을 초과해도  
+그대로 상태가 업데이트되는 문제가 있었다.
+
+- 총 여행 가능 시간을 넘기는 일정이 생성됨
+- UI에 잘못된 시간 정보가 표시됨
+- 파생 상태(useMemo)와 실제 상태가 불일치하는 문제
+
+```ts
+// ⛔ Before: 시간 검증 부재로 총 여행 시간 초과 가능
+
+addPlannedPlace: (place, duration = 120) => {
+  set((state) => {
+    if (state.plannedPlaces.some((p) => p.place.name === place.name)) {
+      return { plannedPlaces: state.plannedPlaces };
+      // ❌ 중복만 막고, 시간 검증은 수행하지 않음
+    }
+
+    // ❌ 문제: plannedTotal > totalAvailable 여부를 체크하지 않음
+    return {
+      plannedPlaces: [...state.plannedPlaces, { place, duration }],
+    };
+  });
+};
+
+setDurationForPlannedPlace: (index, duration) => {
+  set((state) => {
+    // ❌ 문제: duration 변경으로 인해 총 시간이 초과해도 그대로 반영됨
+    const updated = state.plannedPlaces.map((place, i) =>
+      i === index ? { ...place, duration } : place
+    );
+
+    return { plannedPlaces: updated };
+  });
+};
+```
+
+#### 해결
+
+총 여행 가능한 시간 대비 머무는 시간을 초과하는지 확인하는  
+**공통 검증 로직을 유틸 함수(`exceedsTotalAvailableTime`)로 분리**하였다.
+
+이 유틸 함수를 스토어 액션(`addPlannedPlace`, `setDurationForPlannedPlace`) 각각에서 호출하여  
+초과 시 `alert`만 띄우고 **상태 업데이트를 중단(`return state`)** 하도록 수정했다.
+
+```ts
+// ✅ utils/time.ts
+// 총 머무는 시간이 전체 여행 가능 시간을 초과하는지 검사하는 유틸 함수
+
+export function exceedsTotalAvailableTime(
+  plannedPlaces: {
+    place: Place;
+    duration: number;
+  }[],
+  dailyTimes: { startTime: string; endTime: string; date: Date }[]
+): boolean {
+  const plannedTotal = plannedPlaces.reduce(
+    (sum, { duration }) => sum + duration,
+    0
+  );
+  const totalAvailable = dailyTimes.reduce((sum, { startTime, endTime }) => {
+    return (
+      sum + (convertTimeToMinutes(endTime) - convertTimeToMinutes(startTime))
+    );
+  }, 0);
+
+  return plannedTotal > totalAvailable;
+}
+```
+
+```ts
+// ✅ After: 유틸 함수 기반으로 총 시간 초과 검증 추가
+
+addPlannedPlace: (place, duration = 120) => {
+  set((state) => {
+    if (state.plannedPlaces.some((p) => p.place.name === place.name)) {
+      return state;
+    }
+
+    const updatedPlaces = [...state.plannedPlaces, { place, duration }];
+    if (exceedsTotalAvailableTime(updatedPlaces, state.dailyTimes)) {
+      alert("총 여행 가능 시간보다 머무는 시간이 많습니다.");
+      return state;
+    }
+
+    return { plannedPlaces: updatedPlaces };
+  });
+};
+
+setDurationForPlannedPlace: (index, duration) => {
+  set((state) => {
+    const updatedPlaces = state.plannedPlaces.map((place, i) =>
+      i === index ? { ...place, duration } : place
+    );
+    if (exceedsTotalAvailableTime(updatedPlaces, state.dailyTimes)) {
+      alert("총 여행 가능 시간보다 머무는 시간이 많습니다.");
+      return state;
+    }
+
+    return {
+      plannedPlaces: updatedPlaces,
+    };
+  });
+};
+```
+
+#### 요약
+
+총 여행 가능 시간을 초과하는 잘못된 일정이 생성되는 문제를 해결하기 위해  
+**시간 초과 검증 로직을 유틸 함수로 분리하여 스토어 액션 내부에서 재사용**하도록 개선했다.
+
+- 중복 코드 제거
+- 상태 무결성 보장
+- UI와 데이터의 안정적인 일관성 확보
+
+라는 중요한 개선 효과를 얻을 수 있었다.
+
+---
+
 ## ♻️ Express 부분
 
 ### 1. `req.body`에서 `_id` 제거
@@ -951,10 +1126,96 @@ const Home = () => {
 };
 ```
 
-### 요약
+#### 요약
 
 > **검색 컴포넌트는 입력 UI와 검색 정책을 분리해야 한다.**  
 > Input = 단순 입력, Debounce/React Query = 상위 레이어 로직
+
+---
+
+### 9. 머무는 시간 입력 UX 개선: 자릿수 제한 + 실시간 클램프(Clamp) 처리
+
+#### 문제
+
+기존 구현에서는 `onChange` 이벤트로 숫자 입력을 처리하였다. 하지만 다음과 같은 UX 문제가 있었다.
+
+- **자릿수 제한 부재**
+
+  - `00000`처럼 과도한 숫자 입력이 가능
+  - 입력 중 실시간으로 잘리지 않아 시각적으로 어색함
+
+- **입력값 실시간 반영 문제**
+
+  - `setState`로만 처리 시 리렌더 타이밍 차이로 입력 직후 화면에는 여전히 이전 값이 잠깐 표시됨
+
+- **범위 제한 미적용**
+  - `min`, `max` 속성은 브라우저 단에서만 검증되어 키보드 입력으로는 즉시 제한되지 않음
+  - 결과적으로 `-1`, `99`, `1000` 등의 비정상 입력 가능
+
+```tsx
+// ⛔ Before
+
+<input
+  type="number"
+  className="text-20 font-medium tracking-[0.2px]"
+  min={0}
+  max={12}
+  value={hoursValue}
+  onChange={(e) => {
+    setHoursValue(Number(e.currentTarget.value));
+  }}
+/>
+```
+
+#### 해결
+
+입력 중 바로 화면에 반영되도록 **`onInput` 이벤트**로 전환하고,  
+아래 두 가지 로직을 추가하여 UX를 개선하였다.
+
+- **자릿수 제한**
+
+  - 입력값의 길이가 2자리를 초과하면 `slice(0, 2)`로 잘라냄
+  - `const target = e.currentTarget` 사용으로 DOM value 직접 조작  
+    → 입력 즉시 반영되어 사용자는 깔끔한 입력 경험을 가짐
+
+- **Clamp 함수 도입**
+  - `clamp(value, min, max)`로 값의 범위를 강제 제한
+  - 상태에 저장되기 전 숫자 범위를 보정하여 데이터 일관성 유지
+
+```tsx
+// ✅ After
+
+// utils/time.ts
+export const clamp = (value: number, min: number, max: number) => {
+  return Math.max(min, Math.min(max, value));
+};
+
+<input
+  type="number"
+  className="text-20 font-medium tracking-[0.2px]"
+  min={0}
+  max={99}
+  value={hoursValue}
+  onInput={(e) => {
+    const target = e.currentTarget;
+    if (target.value.length > 2) {
+      target.value = target.value.slice(0, 2); // 입력 값 자릿수가 2개 이상이면 2개로 제한
+    }
+    setHoursValue(clamp(Number(target.value), 0, 99)); // clamp 유틸 함수를 이용하여 범위를 제한
+  }}
+/>;
+```
+
+#### UX 개선 효과
+
+- 입력 즉시 시각 반응 → 사용자 혼란 최소화
+- 잘못된 값(예: 999, -1) 자동 교정 → 데이터 일관성 확보
+- 키보드 중심 입력 UX 강화 → 숫자 입력 필드로서 완결성 향상
+
+#### 요약
+
+> **숫자 입력 UX는 ‘입력 제한’과 ‘값 보정’을 동시에 고려해야 한다.**  
+> `onInput`으로 실시간 처리시키고, `clamp`로 최종 데이터 안정성을 확보
 
 ---
 
