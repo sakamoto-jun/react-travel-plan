@@ -12,7 +12,7 @@ interface Props {
 
 const PlaceList = ({ places, onAddPlace }: Props) => {
   return (
-    <div className="min-w-[360px] flex-1 flex flex-col gap-y-24 overflow-y-auto">
+    <div className="flex-1 flex flex-col gap-y-24 overflow-y-auto">
       {places.map((place) => (
         <PlaceItem
           key={`${place.cityCode}_${place.name}`}

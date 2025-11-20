@@ -1,23 +1,31 @@
-import { GoogleMap, MarkerF, useJsApiLoader } from "@react-google-maps/api";
+import {
+  GoogleMap,
+  MarkerF,
+  PolylineF,
+  useJsApiLoader,
+} from "@react-google-maps/api";
+import type { PropsWithChildren } from "react";
 import Loading from "../common/Loading";
 
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
-interface Props {
+interface MapProps {
   center: {
     lat: number;
     lng: number;
   };
-  markers?: {
-    name: string;
-    pos: {
-      lat: number;
-      lng: number;
-    };
-  }[];
+}
+interface MapMakerProps {
+  pos: { lat: number; lng: number };
+  label?: string;
+  options?: { color?: `#${string}` };
+}
+interface MapPathProps {
+  path: { lat: number; lng: number }[];
+  options?: { color?: `#${string}` };
 }
 
-const Map = ({ center, markers = [] }: Props) => {
+const Map = ({ center, children }: PropsWithChildren<MapProps>) => {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: API_KEY,
@@ -25,6 +33,18 @@ const Map = ({ center, markers = [] }: Props) => {
 
   if (!isLoaded) return <Loading />;
 
+  return (
+    <GoogleMap mapContainerClassName="w-full h-full" center={center} zoom={13}>
+      {children}
+    </GoogleMap>
+  );
+};
+
+const MapMaker = ({
+  pos,
+  label,
+  options: { color = "#C730DF" } = {},
+}: MapMakerProps) => {
   const markerIcon = {
     url:
       "data:image/svg+xml;charset=UTF-8," +
@@ -39,25 +59,30 @@ const Map = ({ center, markers = [] }: Props) => {
           cx="0"
           cy="0"
           r="15"
-          fill="#C730DF"
+          fill="${color}"
         />
       </svg>
     `),
     scaledSize: new window.google.maps.Size(30, 30),
   };
+
   return (
-    <GoogleMap mapContainerClassName="w-full h-full" center={center} zoom={13}>
-      {markers.map((p, index) => (
-        <MarkerF
-          key={index}
-          position={p.pos}
-          title={p.name}
-          icon={markerIcon}
-          label={{ text: `${index + 1}`, color: "white" }}
-        />
-      ))}
-    </GoogleMap>
+    <MarkerF
+      position={pos}
+      icon={markerIcon}
+      label={label ? { text: label, color: "#FFFFFF" } : undefined}
+    />
   );
 };
 
+const MapPath = ({
+  path,
+  options: { color = "#C730DF" } = {},
+}: MapPathProps) => {
+  const polylineOptions = { strokeColor: color };
+
+  return <PolylineF path={path} options={polylineOptions} />;
+};
+
+export { MapMaker, MapPath };
 export default Map;

@@ -5,6 +5,7 @@ import type { Place } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
+import ErrorMessage from "../common/ErrorMessage";
 import Loading from "../common/Loading";
 import SearchInput from "../common/SearchInput";
 import PlaceFilterList from "./PlaceFilterList";
@@ -43,7 +44,7 @@ const PlaceContainer = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col gap-y-18 overflow-y-hidden">
+    <div className="min-w-[380px] flex-1 flex flex-col gap-y-18 overflow-y-hidden">
       <SearchInput
         className="h-40"
         placeholder="장소명을 입력하세요"
@@ -54,9 +55,7 @@ const PlaceContainer = () => {
         onChangeFilter={handleChangeFilter}
       />
       {isLoading && <Loading />}
-      {!isLoading && error && (
-        <div className="text-gray400 text-14">에러가 발생했습니다 😭</div>
-      )}
+      {!isLoading && error && <ErrorMessage />}
       {!isLoading && !error && data && (
         <PlaceList
           places={data}

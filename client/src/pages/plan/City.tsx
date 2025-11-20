@@ -1,7 +1,8 @@
+import ErrorMessage from "@/components/common/ErrorMessage";
 import Loading from "@/components/common/Loading";
 import WideLayout from "@/components/common/WideLayout";
-import Map from "@/components/plan/Map";
 import PlanController from "@/components/plan/PlanController";
+import PlanMapContainer from "@/components/plan/PlanMapContainer";
 import TravelPeriodModal from "@/components/plan/TravelPeriodModal";
 import { getCity } from "@/services/plan";
 import { usePlanStore } from "@/store";
@@ -18,7 +19,7 @@ const PlanCity = () => {
   });
 
   if (isLoading) return <Loading />;
-  if (error) return <div>에러가 발생했습니다 😭</div>;
+  if (error) return <ErrorMessage />;
   if (!data) return null;
 
   return (
@@ -28,7 +29,7 @@ const PlanCity = () => {
         <div className="flex h-full">
           <PlanController />
           <div className="flex-1 bg-gray300">
-            <Map center={data.coordinates} />
+            <PlanMapContainer coordinates={data.coordinates} />
           </div>
         </div>
       </WideLayout>

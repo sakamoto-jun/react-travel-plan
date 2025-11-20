@@ -1,3 +1,4 @@
+import ErrorMessage from "@/components/common/ErrorMessage";
 import Loading from "@/components/common/Loading";
 import NarrowLayout from "@/components/common/NarrowLayout";
 import SearchInput from "@/components/common/SearchInput";
@@ -35,7 +36,7 @@ const Home = () => {
         <FilterList selectedFilter="all" onChange={() => {}} />
       </div>
       {isLoading && <Loading />}
-      {!isLoading && error && <div>에러가 발생했습니다 😭</div>}
+      {!isLoading && error && <ErrorMessage />}
       {!isLoading && !error && data && <CityList cities={data} />}
     </NarrowLayout>
   );

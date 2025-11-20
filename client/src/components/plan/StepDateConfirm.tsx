@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import { useMemo, useState } from "react";
 import Button from "../common/Button";
 
-const StepDateConfirm = ({ onNext: onCompleted }: { onNext: () => void }) => {
+const StepDateConfirm = ({ onCompleted }: { onCompleted: () => void }) => {
   const [hidden, setHidden] = useState(false);
 
   const { dailyTimes, setDailyTimes } = usePlanStore();

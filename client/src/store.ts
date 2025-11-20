@@ -14,7 +14,6 @@ interface State {
     duration: number; // 분으로 처리
   }[];
 }
-
 interface Action {
   setStartDate: (date: Date | null) => void;
   setEndDate: (date: Date | null) => void;
@@ -119,11 +118,9 @@ const usePlanStore = create<State & Action>()((set, get) => ({
 }));
 
 type ModalComponent = FunctionComponent<{ onClose: () => void }>;
-
 interface ModalState {
   modals: ModalComponent[];
 }
-
 interface ModalAction {
   openModal: (modal: ModalComponent) => void;
   closeModal: (index: number) => void;
