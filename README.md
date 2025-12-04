@@ -499,7 +499,7 @@ function attachCountryToCities(
 
 ## ♻️ 컴포넌트 부분
 
-### 1. 시차 계산 로직 개선 (UTC Offset → 한국 기준 변환)
+### 1. `CityDetail.tsx`컴포넌트 - 시차 계산 로직 개선 (UTC Offset → 한국 기준 변환)
 
 #### 문제
 
@@ -536,7 +536,7 @@ const getTimeDiff = (cityOffset: number) => {
 
 ---
 
-### 2. 전역 로케일 설정 (date-fns + react-datepicker 통합)
+### 2. 유틸 `date.ts` - 전역 로케일 설정 (`date-fns` + `react-datepicker` 통합)
 
 #### 문제
 
@@ -617,8 +617,43 @@ function toMinutes(time: string) {
 }
 ```
 
-> ✅ `useMemo`를 통해 `dailyTimes`가 변경되지 않으면 `reduce` 연산이 재실행되지 않음.<br/>
+> ✅ `useMemo`를 통해 `dailyTimes`가 변경되지 않으면 `reduce` 연산이 재실행되지 않음.  
 > ✅ 헬퍼 함수 `toMinutes`는 직관적이며, slice 인덱스 접근보다 유지보수가 용이함.
+
+#### 업그레이드
+
+- `"시:분"` 포맷과 `totalMinutes`를 `hour`와 `minute`으로 뽑아내야 되는 로직이 타 컴포넌트에서도 사용되어 유틸 함수로 따로 관리
+
+```ts
+// ✅ After - Upgrade
+// Component Logic
+const { hours, minutes } = useMemo(() => {
+  const totalTime =
+    dailyTimes?.reduce((sum, { startTime, endTime }) => {
+      return (
+        sum + (convertTimeToMinutes(endTime) - convertTimeToMinutes(startTime))
+      );
+    }, 0) ?? 0;
+
+  const time = convertMinutesToTime(totalTime);
+
+  return time;
+}, [dailyTimes]);
+
+// utils/time.ts
+export function convertTimeToMinutes(time: string) {
+  const [hour, minute] = time.split(":").map(Number);
+
+  return hour * 60 + minute;
+}
+
+export function convertMinutesToTime(totalMinutes: number) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return { hours, minutes };
+}
+```
 
 ---
 
@@ -679,7 +714,7 @@ function MyMap() {
 
 ---
 
-### 5. React Query 조건부 요청 및 로딩 구조 개선 (`useParams` + `enabled`)
+### 5. `React Query` 조건부 요청 및 로딩 구조 개선 (`useParams` + `enabled`)
 
 #### 문제
 
@@ -757,7 +792,7 @@ const PlanCity = () => {
 
 ---
 
-### 6. Wizard 컴포넌트 렌더링 방식 개선 (`React.ComponentType` + JSX 렌더링)
+### 6. `Wizard` 컴포넌트 - 렌더링 방식 개선 (`React.ComponentType` + JSX 렌더링)
 
 #### 문제
 
@@ -827,17 +862,9 @@ const Wizard = ({ steps }: WizardProps) => {
 | **[2] 렌더링**    | `<CurrentComponent onNext={onNext} />` → JSX 문법으로 표준 렌더링                         |
 | **[3] 이동 처리** | `onNext()` 호출 시 `currentStep` 증가 → 다음 스텝으로 이동                                |
 
-#### 요약
-
-> **React.ComponentType + JSX 렌더링 방식으로 변경하여,**
->
-> - 컴포넌트 가독성 향상
-> - 타입 자동 추론 지원
-> - 렌더링 효율성 개선을 달성함.
-
 ---
 
-### 7. Wizard 스텝 이동 제한 및 완료 단계 스타일링 개선
+### 7. `Wizard` 스텝 이동 제한 및 완료 단계 스타일링 개선
 
 #### 문제
 
@@ -886,7 +913,7 @@ const Wizard = ({ steps }: WizardProps) => {
 
 ---
 
-### 8. 검색 UX 개선: IME(한글 입력) 처리 + Debounce + React Query, 조건부 랜더 최적화
+### 8. 검색 UX 개선: IME(한글 입력) 처리 + `Debounce` + `React Query`, 조건부 랜더 최적화
 
 #### 문제
 
@@ -1024,7 +1051,7 @@ const Home = () => {
 ```tsx
 // ✅ After
 
-// useDebounce.ts
+// hooks/useDebounce.ts
 function useDebounce<T>(value: T, delay: number = 300) {
   const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -1175,7 +1202,7 @@ const Home = () => {
 - **자릿수 제한**
 
   - 입력값의 길이가 2자리를 초과하면 `slice(0, 2)`로 잘라냄
-  - `const target = e.currentTarget` 사용으로 DOM value 직접 조작  
+  - `const target = e.currentTarget` 사용으로 DOM value를 직접 조작  
     → 입력 즉시 반영되어 사용자는 깔끔한 입력 경험을 가짐
 
 - **Clamp 함수 도입**
@@ -1219,9 +1246,98 @@ export const clamp = (value: number, min: number, max: number) => {
 
 ---
 
+### 10. `planMapConatiner.tsx` 컴포넌트 - 숙소 맵 마커 표시 기능 추가
+
+#### 문제
+
+기존에는 **여행 장소( plannedPlaces )**에 대한 마커만 지도에 표시되었다.  
+이 때문에 사용자는 **숙소 기준 동선 파악이 어렵고**,  
+여행 일정 조정 시 숙소에서 각 장소까지의 이동 편의성을 시각적으로 확인할 수 없었다.
+
+```tsx
+// ⛔ Before
+
+const PlanMapContainer = ({ coordinates }: Props) => {
+  const { plannedPlaces } = usePlanStore();
+  const markers = plannedPlaces?.map(({ place }) => place.coordinates);
+
+  return (
+    <Map center={coordinates}>
+      {markers.map((marker, index) => (
+        <MapMaker
+          key={index}
+          pos={marker}
+          label={`${index + 1}`}
+          options={{ color: "#0095A9" }}
+        />
+      ))}
+      <MapPath path={markers} options={{ color: "#0095A9" }} />
+    </Map>
+  );
+};
+```
+
+#### 해결
+
+**숙소(accommodation) 마커를 추가하여 지도에서 전체 동선 시각화 개선**
+
+- 장소뿐만 아니라 숙소의 위치도 지도에 표시하여 **여행 동선·거리 감각을 한눈에 파악하도록 구현**
+- 숙소는 이동 경로(Path) 대상이 아니므로 `MapPath`에는 포함하지 않음
+
+**`null` 제거를 위한 명시적 타입 가드 적용**
+
+- `filter(Boolean)`은 truthy 체크만 하므로 TypeScript가 `Place` 타입으로 안전하게 좁히지 못함 →  
+  `filter((acc): acc is Place => acc !== null)` 로 명확하게 타입 좁힘 처리
+
+**장소 + 숙소 마커를 하나의 `markers` 배열로 병합**
+
+- 가공된 장소 마커 데이터와 숙소 마커 데이터를 `...`으로 `markers`로 데이터를 객체가 담긴 배열 형태로 재가공 후 병합 처리
+
+```tsx
+// ✅ After
+
+const PlanMapContainer = ({ coordinates }: Props) => {
+  const { plannedPlaces, plannedAccommodations } = usePlanStore();
+
+  const placeMarkers = plannedPlaces.map(({ place }) => place.coordinates);
+  const accommodationMarkers = plannedAccommodations
+    .filter((acc): acc is Place => acc !== null)
+    .map((acc) => acc.coordinates);
+
+  const markers = [
+    ...placeMarkers.map((marker, index) => ({
+      pos: marker,
+      label: `${index + 1}`,
+      color: "#0095A9" as const,
+    })),
+    ...accommodationMarkers.map((marker, index) => ({
+      pos: marker,
+      label: `H${index + 1}`,
+      color: "#B335C7" as const,
+    })),
+  ];
+
+  return (
+    <Map center={coordinates}>
+      {markers.map((marker, index) => (
+        <MapMaker
+          key={index}
+          pos={marker.pos}
+          label={marker.label}
+          options={{ color: marker.color }}
+        />
+      ))}
+      <MapPath path={placeMarkers} options={{ color: "#0095A9" }} />
+    </Map>
+  );
+};
+```
+
+---
+
 # 🧭 시도 기록
 
-## 📘 Date Picker 교체 과정
+## **Date Picker** 교체 과정
 
 ### 1️⃣ 초기 선택: `react-datepicker`
 

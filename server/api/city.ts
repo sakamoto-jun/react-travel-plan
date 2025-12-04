@@ -131,15 +131,21 @@ cityRouter.get("/:cityCode", (req, res) => {
 cityRouter.get("/:cityCode/places", (req, res) => {
   const cityCode = req.params.cityCode.toLowerCase();
   const { category, q } = req.query as {
-    category?: Place["category"];
+    category?: Place["category"] | Place["category"][];
     q?: string;
   };
 
   if (typeof cityCode !== "string") {
     return res.status(400).send({ message: "Invalid city code" });
   }
-  if (category && typeof category !== "string") {
-    return res.status(400).send({ message: "Invalid category" });
+  if (category) {
+    const isString = typeof category === "string";
+    const isStringArray =
+      Array.isArray(category) && category.every((c) => typeof c === "string");
+
+    if (!isString && !isStringArray) {
+      return res.status(400).send({ message: "Invalid category" });
+    }
   }
   if (q && typeof q !== "string") {
     return res.status(400).send({ message: "Invalid query" });
@@ -147,7 +153,9 @@ cityRouter.get("/:cityCode/places", (req, res) => {
 
   const placesQuery = {
     cityCode,
-    ...(category ? { category } : {}),
+    ...(category
+      ? { category: { $in: Array.isArray(category) ? category : [category] } }
+      : {}),
     ...(q ? { name: new RegExp(q, "i") } : {}),
   }; // undefined 조건 제거
 

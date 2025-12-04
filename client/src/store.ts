@@ -13,6 +13,7 @@ interface State {
     place: Place;
     duration: number; // 분으로 처리
   }[];
+  plannedAccommodations: (Place | null)[];
 }
 interface Action {
   setStartDate: (date: Date | null) => void;
@@ -26,14 +27,18 @@ interface Action {
   addPlannedPlace: (place: Place, duration?: number) => void;
   removePlannedPlace: (index: number) => void;
   setDurationForPlannedPlace: (index: number, duration: number) => void;
+  addPlannedAccommodation: (place: Place) => void;
+  removePlannedAccommodation: (index: number) => void;
 }
 
+// Plan Store
 const usePlanStore = create<State & Action>()((set, get) => ({
   startDate: null,
   endDate: null,
   status: "period_edit",
   dailyTimes: [],
   plannedPlaces: [],
+  plannedAccommodations: [],
   setStartDate: (date) => {
     if (!date) {
       set({ startDate: null, endDate: null });
@@ -43,26 +48,34 @@ const usePlanStore = create<State & Action>()((set, get) => ({
   },
   setEndDate: (date) => {
     if (!date) {
-      set({ endDate: null, dailyTimes: [] });
+      set({ endDate: null, dailyTimes: [], plannedAccommodations: [] });
       return;
     }
 
     const startDate = get().startDate!;
     const diffDays = differenceInDays(date, startDate) + 1; // +1 추가 (시작일 포함)
-    const dailyTimes = Array.from({ length: diffDays }, (_, i) => {
+    const defaultDailyTimes = Array.from({ length: diffDays }, (_, i) => {
       return {
         startTime: "10:00",
         endTime: "22:00",
         date: addDays(startDate, i),
       };
     });
+    const defaultPlannedAccommodations = Array.from(
+      { length: diffDays - 1 },
+      () => null
+    );
 
     set((state) => {
       if (state.startDate && date < state.startDate) {
-        return { endDate: null, dailyTimes: [] };
+        return { endDate: null, dailyTimes: [], plannedAccommodations: [] };
       }
 
-      return { endDate: date, dailyTimes };
+      return {
+        endDate: date,
+        dailyTimes: defaultDailyTimes,
+        plannedAccommodations: defaultPlannedAccommodations,
+      };
     });
   },
   setStatus: (status: State["status"]) => {
@@ -115,8 +128,32 @@ const usePlanStore = create<State & Action>()((set, get) => ({
       };
     });
   },
+  addPlannedAccommodation: (place) => {
+    set((state) => {
+      const index = state.plannedAccommodations.findIndex((p) => p === null);
+      if (index === -1) return state;
+
+      const updatedAccommodations = state.plannedAccommodations.map((p, i) =>
+        i === index ? place : p
+      );
+
+      return {
+        plannedAccommodations: updatedAccommodations,
+      };
+    });
+  },
+  removePlannedAccommodation: (index) => {
+    set((state) => {
+      return {
+        plannedAccommodations: state.plannedAccommodations.map((p, i) =>
+          i === index ? null : p
+        ),
+      };
+    });
+  },
 }));
 
+// Modal Store
 type ModalComponent = FunctionComponent<{ onClose: () => void }>;
 interface ModalState {
   modals: ModalComponent[];

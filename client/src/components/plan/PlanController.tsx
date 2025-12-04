@@ -1,5 +1,7 @@
 import { usePlanStore } from "@/store";
 import Wizard from "../common/Wizard";
+import AccommodationContainer from "./AccommodationContainer";
+import AccommodationController from "./AccommodationController";
 import PlaceContainer from "./PlaceContainer";
 import PlaceController from "./PlaceController";
 import PlanControllerHeader from "./PlanControllerHeader";
@@ -39,7 +41,27 @@ const PlanController = () => {
         </>
       ),
     },
-    { title: "숙소 선택", component: () => <div>숙소 선택</div> },
+    {
+      title: "숙소 선택",
+      component: () => (
+        <>
+          <div className="flex flex-col px-24 py-30">
+            <PlanControllerHeader startDate={startDate} endDate={endDate} />
+            <div className="flex-1 overflow-y-hidden">
+              <div className="flex flex-col h-full">
+                <div className="mb-18 p-14 border-b-3 border-b-main text-center">
+                  <h4 className="text-18 font-semibold text-main">숙소 선택</h4>
+                </div>
+                <AccommodationContainer />
+              </div>
+            </div>
+          </div>
+          <div className="px-24 py-30 bg-white">
+            <AccommodationController />
+          </div>
+        </>
+      ),
+    },
   ];
 
   return <Wizard steps={steps} />;

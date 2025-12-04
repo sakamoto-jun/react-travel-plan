@@ -34,7 +34,7 @@ export interface Country {
 export interface Place {
   name: string; // 장소 이름 (ex: 서울, 부산)
   thumbnail: string; // 장소 썸네일 이미지 URL (ex: https://example.com/seoul.jpg)
-  category: "attraction" | "restaurant" | "cafe"; // 장소 카테고리 (ex: 명소, 식당, 카페)
+  category: "attraction" | "restaurant" | "cafe" | "accommodation"; // 카테고리 (ex: 명소, 식당, 카페, 숙소)
   coordinates: { lat: number; lng: number }; // 장소 좌표 (위도, 경도)
   address: string; // 장소 주소
   likes: number; // 장소의 좋아요 수
