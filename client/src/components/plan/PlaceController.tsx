@@ -1,19 +1,19 @@
-import { usePlanStore } from "@/store";
-import {
-  convertMinutesToTime,
-  convertTimeToMinutes,
-  formatTimeUnit,
-} from "@/utils/time";
-import { useMemo } from "react";
-import PlannedPlaceList from "./PlannedPlaceList";
+import { usePlanStore } from '@/store';
+import { convertMinutesToTime, convertTimeToMinutes, formatTimeUnit } from '@/utils/time';
+import { useMemo } from 'react';
+import { useShallow } from 'zustand/shallow';
+import PlannedPlaceList from './PlannedPlaceList';
 
 const PlaceController = () => {
-  const {
-    dailyTimes,
-    plannedPlaces,
-    removePlannedPlace,
-    setDurationForPlannedPlace,
-  } = usePlanStore();
+  const { dailyTimes, plannedPlaces, removePlannedPlace, setDurationForPlannedPlace } =
+    usePlanStore(
+      useShallow((s) => ({
+        dailyTimes: s.dailyTimes,
+        plannedPlaces: s.plannedPlaces,
+        removePlannedPlace: s.removePlannedPlace,
+        setDurationForPlannedPlace: s.setDurationForPlannedPlace,
+      }))
+    );
 
   const { plannedTime, totalTime } = useMemo(() => {
     const plannedTime =
@@ -22,10 +22,7 @@ const PlaceController = () => {
       }, 0) ?? 0;
     const totalTime =
       dailyTimes?.reduce((sum, { startTime, endTime }) => {
-        return (
-          sum +
-          (convertTimeToMinutes(endTime) - convertTimeToMinutes(startTime))
-        );
+        return sum + (convertTimeToMinutes(endTime) - convertTimeToMinutes(startTime));
       }, 0) ?? 0;
 
     return {
@@ -37,15 +34,11 @@ const PlaceController = () => {
   return (
     <div className="flex flex-col">
       <h5 className="inline-flex items-end text-black mb-13">
-        <span className="text-30 font-medium tracking-[0.3px] mr-8">
-          {plannedPlaces.length}
-        </span>
+        <span className="text-30 font-medium tracking-[0.3px] mr-8">{plannedPlaces.length}</span>
         <span className="text-15 tracking-[0.15px] mb-4">
           {`${formatTimeUnit(plannedTime.hours)}시간 ${formatTimeUnit(
             plannedTime.minutes
-          )}분 / ${formatTimeUnit(totalTime.hours)}시간 ${formatTimeUnit(
-            totalTime.minutes
-          )}분`}
+          )}분 / ${formatTimeUnit(totalTime.hours)}시간 ${formatTimeUnit(totalTime.minutes)}분`}
         </span>
       </h5>
       {plannedPlaces.length > 0 ? (

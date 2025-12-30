@@ -1,20 +1,23 @@
-import { usePlanStore } from "@/store";
-import PlannedAccommodationList from "./PlannedAccommodationList";
+import { usePlanStore } from '@/store';
+import { useShallow } from 'zustand/shallow';
+import PlannedAccommodationList from './PlannedAccommodationList';
 
 const AccommodationController = () => {
-  const { plannedAccommodations, removePlannedAccommodation, startDate } =
-    usePlanStore();
+  const { plannedAccommodations, removePlannedAccommodation, startDate } = usePlanStore(
+    useShallow((s) => ({
+      plannedAccommodations: s.plannedAccommodations,
+      startDate: s.startDate,
+      removePlannedAccommodation: s.removePlannedAccommodation,
+    }))
+  );
 
-  const plannedAccommodationsLength =
-    plannedAccommodations.filter(Boolean).length;
+  const plannedAccommodationsLength = plannedAccommodations.filter(Boolean).length;
   const accommodationsCount = new Set(plannedAccommodations).size;
 
   return (
     <div className="flex flex-col">
       <h5 className="inline-flex items-end text-black mb-13">
-        <span className="text-30 font-medium tracking-[0.3px] mr-8">
-          {accommodationsCount}
-        </span>
+        <span className="text-30 font-medium tracking-[0.3px] mr-8">{accommodationsCount}</span>
         <span className="text-15 tracking-[0.15px] mb-4">
           {plannedAccommodationsLength}일 / {plannedAccommodations.length}일
         </span>

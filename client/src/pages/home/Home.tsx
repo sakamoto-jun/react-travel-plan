@@ -4,7 +4,7 @@ import NarrowLayout from "@/components/common/NarrowLayout";
 import SearchInput from "@/components/common/SearchInput";
 import CityList from "@/components/home/CityList";
 import FilterList from "@/components/home/FilterList";
-import useDebounce from "@/hooks/useDebounce";
+import useDebounce from "@/hooks/common/useDebounce";
 import { getCities, searchCities } from "@/services/home";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";

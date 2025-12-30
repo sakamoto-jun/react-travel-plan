@@ -41,3 +41,10 @@ export interface Place {
   rating: number; // 장소의 평점
   cityCode: City["code"]; // 장소가 속한 도시 코드
 }
+
+export interface ItineraryItem {
+  place: Place;
+  duration: number; // 체류 시간
+  startTime: string;
+  endTime: string;
+}

@@ -1,13 +1,13 @@
-import { addDays, differenceInDays } from "date-fns";
-import type { FunctionComponent } from "react";
-import { create } from "zustand";
-import type { Place } from "./types";
-import { exceedsTotalAvailableTime } from "./utils/time";
+import { addDays, differenceInDays } from 'date-fns';
+import type { FunctionComponent } from 'react';
+import { create } from 'zustand';
+import type { Place } from './types';
+import { exceedsTotalAvailableTime } from './utils/time';
 
-interface State {
+export interface State {
   startDate: Date | null;
   endDate: Date | null;
-  status: "period_edit" | "planning";
+  status: 'period_edit' | 'planning';
   dailyTimes: { startTime: string; endTime: string; date: Date }[];
   plannedPlaces: {
     place: Place;
@@ -18,12 +18,8 @@ interface State {
 interface Action {
   setStartDate: (date: Date | null) => void;
   setEndDate: (date: Date | null) => void;
-  setStatus: (status: State["status"]) => void;
-  setDailyTimes: (
-    index: number,
-    time: string,
-    type: "startTime" | "endTime"
-  ) => void;
+  setStatus: (status: State['status']) => void;
+  setDailyTimes: (index: number, time: string, type: 'startTime' | 'endTime') => void;
   addPlannedPlace: (place: Place, duration?: number) => void;
   removePlannedPlace: (index: number) => void;
   setDurationForPlannedPlace: (index: number, duration: number) => void;
@@ -35,7 +31,7 @@ interface Action {
 const usePlanStore = create<State & Action>()((set, get) => ({
   startDate: null,
   endDate: null,
-  status: "period_edit",
+  status: 'period_edit',
   dailyTimes: [],
   plannedPlaces: [],
   plannedAccommodations: [],
@@ -56,15 +52,12 @@ const usePlanStore = create<State & Action>()((set, get) => ({
     const diffDays = differenceInDays(date, startDate) + 1; // +1 추가 (시작일 포함)
     const defaultDailyTimes = Array.from({ length: diffDays }, (_, i) => {
       return {
-        startTime: "10:00",
-        endTime: "22:00",
+        startTime: '10:00',
+        endTime: '22:00',
         date: addDays(startDate, i),
       };
     });
-    const defaultPlannedAccommodations = Array.from(
-      { length: diffDays - 1 },
-      () => null
-    );
+    const defaultPlannedAccommodations = Array.from({ length: diffDays - 1 }, () => null);
 
     set((state) => {
       if (state.startDate && date < state.startDate) {
@@ -78,7 +71,7 @@ const usePlanStore = create<State & Action>()((set, get) => ({
       };
     });
   },
-  setStatus: (status: State["status"]) => {
+  setStatus: (status) => {
     set({ status });
   },
   setDailyTimes: (index, time, type) => {
@@ -99,7 +92,7 @@ const usePlanStore = create<State & Action>()((set, get) => ({
 
       const updatedPlaces = [...state.plannedPlaces, { place, duration }];
       if (exceedsTotalAvailableTime(updatedPlaces, state.dailyTimes)) {
-        alert("총 여행 가능 시간보다 머무는 시간이 많습니다.");
+        alert('총 여행 가능 시간보다 머무는 시간이 많습니다.');
         return state;
       }
 
@@ -119,7 +112,7 @@ const usePlanStore = create<State & Action>()((set, get) => ({
         i === index ? { ...place, duration } : place
       );
       if (exceedsTotalAvailableTime(updatedPlaces, state.dailyTimes)) {
-        alert("총 여행 가능 시간보다 머무는 시간이 많습니다.");
+        alert('총 여행 가능 시간보다 머무는 시간이 많습니다.');
         return state;
       }
 
@@ -145,9 +138,7 @@ const usePlanStore = create<State & Action>()((set, get) => ({
   removePlannedAccommodation: (index) => {
     set((state) => {
       return {
-        plannedAccommodations: state.plannedAccommodations.map((p, i) =>
-          i === index ? null : p
-        ),
+        plannedAccommodations: state.plannedAccommodations.map((p, i) => (i === index ? null : p)),
       };
     });
   },
@@ -161,6 +152,7 @@ interface ModalState {
 interface ModalAction {
   openModal: (modal: ModalComponent) => void;
   closeModal: (index: number) => void;
+  clearModals: () => void;
 }
 
 const useModalStore = create<ModalState & ModalAction>()((set) => ({
@@ -175,6 +167,7 @@ const useModalStore = create<ModalState & ModalAction>()((set) => ({
       modals: state.modals.filter((_, i) => i !== index),
     }));
   },
+  clearModals: () => set({ modals: [] }),
 }));
 
 export { useModalStore, usePlanStore };

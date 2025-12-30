@@ -1,7 +1,8 @@
-import { useModalStore } from "@/store";
+import { useModalStore } from '@/store';
 
 const ModalProvider = () => {
-  const { modals, closeModal } = useModalStore();
+  const modals = useModalStore((s) => s.modals);
+  const closeModal = useModalStore((s) => s.closeModal);
 
   return (
     <>

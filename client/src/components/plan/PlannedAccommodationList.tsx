@@ -48,7 +48,7 @@ const PlannedAccommodationItem = ({
 }: ItemProps) => {
   return (
     <li className="flex items-center">
-      <div className="flex justify-center items-center w-30 h-30 rounded-full bg-[#B335C7] mr-10">
+      <div className="flex justify-center items-center w-30 h-30 rounded-full bg-[#C730DF] mr-10">
         <span className="text-16 font-semibold text-white tracking-[0.16px]">
           {index + 1}
         </span>

@@ -1,9 +1,9 @@
 import DeleteIcon from "@/assets/icons/delete.svg?react";
-import { categories } from "@/constant";
 import type { Place } from "@/types";
 import { clamp, convertMinutesToTime } from "@/utils/time";
 import { useEffect, useState } from "react";
 import Button from "../common/Button";
+import CategoryLabel from "../common/CategoryLabel";
 
 interface Props {
   plannedPlaces: {
@@ -86,9 +86,7 @@ const PlannedPlaceItem = ({
                 {place.name}
               </h6>
               <p className="inline-flex gap-x-6 text-14 tracking-[0.14px]">
-                <span className="shrink-0 text-main font-medium">
-                  {categories[place.category]}
-                </span>
+                <CategoryLabel category={place.category} />
                 <span
                   className="max-w-160 text-gray500 truncate"
                   title={place.address}

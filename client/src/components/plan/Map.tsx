@@ -1,13 +1,5 @@
-import {
-  GoogleMap,
-  MarkerF,
-  PolylineF,
-  useJsApiLoader,
-} from "@react-google-maps/api";
+import { GoogleMap, MarkerF, PolylineF } from "@react-google-maps/api";
 import type { PropsWithChildren } from "react";
-import Loading from "../common/Loading";
-
-const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 interface MapProps {
   center: {
@@ -26,13 +18,6 @@ interface MapPathProps {
 }
 
 const Map = ({ center, children }: PropsWithChildren<MapProps>) => {
-  const { isLoaded } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: API_KEY,
-  });
-
-  if (!isLoaded) return <Loading />;
-
   return (
     <GoogleMap mapContainerClassName="w-full h-full" center={center} zoom={13}>
       {children}

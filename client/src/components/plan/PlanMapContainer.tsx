@@ -1,13 +1,14 @@
-import Map, { MapMaker, MapPath } from "@/components/plan/Map";
-import { usePlanStore } from "@/store";
-import type { Place } from "@/types";
+import Map, { MapMaker, MapPath } from '@/components/plan/Map';
+import { usePlanStore } from '@/store';
+import type { Place } from '@/types';
 
 interface Props {
   coordinates: { lat: number; lng: number };
 }
 
 const PlanMapContainer = ({ coordinates }: Props) => {
-  const { plannedPlaces, plannedAccommodations } = usePlanStore();
+  const plannedPlaces = usePlanStore((s) => s.plannedPlaces);
+  const plannedAccommodations = usePlanStore((s) => s.plannedAccommodations);
 
   const placeMarkers = plannedPlaces.map(({ place }) => place.coordinates);
   const accommodationMarkers = plannedAccommodations
@@ -18,12 +19,12 @@ const PlanMapContainer = ({ coordinates }: Props) => {
     ...placeMarkers.map((marker, index) => ({
       pos: marker,
       label: `${index + 1}`,
-      color: "#0095A9" as const,
+      color: '#0095A9' as const,
     })),
     ...accommodationMarkers.map((marker, index) => ({
       pos: marker,
       label: `H${index + 1}`,
-      color: "#B335C7" as const,
+      color: '#C730DF' as const,
     })),
   ];
 
@@ -37,7 +38,7 @@ const PlanMapContainer = ({ coordinates }: Props) => {
           options={{ color: marker.color }}
         />
       ))}
-      <MapPath path={placeMarkers} options={{ color: "#0095A9" }} />
+      <MapPath path={placeMarkers} options={{ color: '#0095A9' }} />
     </Map>
   );
 };

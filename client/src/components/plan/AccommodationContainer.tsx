@@ -1,29 +1,29 @@
-import useDebounce from "@/hooks/useDebounce";
-import { getPlaces } from "@/services/plan";
-import { usePlanStore } from "@/store";
-import type { Place } from "@/types";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { useParams } from "react-router-dom";
-import ErrorMessage from "../common/ErrorMessage";
-import Loading from "../common/Loading";
-import SearchInput from "../common/SearchInput";
-import PlaceList from "./PlaceList";
+import useDebounce from '@/hooks/common/useDebounce';
+import { getPlaces } from '@/services/plan';
+import { usePlanStore } from '@/store';
+import type { Place } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import ErrorMessage from '../common/ErrorMessage';
+import Loading from '../common/Loading';
+import SearchInput from '../common/SearchInput';
+import PlaceList from './PlaceList';
 
 const AccommodationContainer = () => {
-  const [queryValue, setQueryValue] = useState("");
+  const [queryValue, setQueryValue] = useState('');
 
-  const { addPlannedAccommodation } = usePlanStore();
+  const addPlannedAccommodation = usePlanStore((s) => s.addPlannedAccommodation);
 
   const debouncedQueryValue = useDebounce(queryValue);
 
   const { city: cityCode } = useParams();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["accommdations", cityCode, debouncedQueryValue],
+    queryKey: ['accommdations', cityCode, debouncedQueryValue],
     queryFn: () => {
       const queryString = {
-        ...{ category: "accommodation" },
+        ...{ category: 'accommodation' },
         ...(debouncedQueryValue ? { q: debouncedQueryValue } : {}),
       }; // undefined 조건 제거
 
@@ -43,10 +43,7 @@ const AccommodationContainer = () => {
       {isLoading && <Loading />}
       {!isLoading && error && <ErrorMessage />}
       {!isLoading && !error && data && (
-        <PlaceList
-          places={data}
-          onAddPlace={(place: Place) => addPlannedAccommodation(place)}
-        />
+        <PlaceList places={data} onAddPlace={(place: Place) => addPlannedAccommodation(place)} />
       )}
     </div>
   );

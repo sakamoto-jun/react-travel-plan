@@ -9,15 +9,17 @@ type Step = {
 
 interface WizardProps {
   steps: Step[];
+  onCompleted?: () => void;
 }
 
 interface StepsProps {
   steps: Step[];
   currentStep: number;
   onChangeStep: (index: number) => void;
+  onCompleted?: () => void;
 }
 
-const Wizard = ({ steps }: WizardProps) => {
+const Wizard = ({ steps, onCompleted }: WizardProps) => {
   const [currentStep, setCurrentStep] = useState(0);
 
   const onNext = () => {
@@ -34,6 +36,7 @@ const Wizard = ({ steps }: WizardProps) => {
         steps={steps}
         currentStep={currentStep}
         onChangeStep={setCurrentStep}
+        onCompleted={onCompleted}
       />
 
       {/* 우측 컨텐츠 영역 */}
@@ -42,7 +45,20 @@ const Wizard = ({ steps }: WizardProps) => {
   );
 };
 
-const Steps = ({ steps, currentStep, onChangeStep }: StepsProps) => {
+const Steps = ({
+  steps,
+  currentStep,
+  onChangeStep,
+  onCompleted,
+}: StepsProps) => {
+  const handleClick = () => {
+    if (currentStep === steps.length - 1) {
+      onCompleted?.();
+    } else {
+      onChangeStep(currentStep + 1);
+    }
+  };
+
   return (
     <div className="px-20 py-50 flex flex-col items-center justify-between">
       <ul className="w-78 mx-8 flex flex-col gap-y-30">
@@ -69,12 +85,7 @@ const Steps = ({ steps, currentStep, onChangeStep }: StepsProps) => {
           );
         })}
       </ul>
-      <Button
-        className={clsx({ invisible: currentStep === steps.length - 1 })}
-        onClick={() => onChangeStep(currentStep + 1)}
-      >
-        다음
-      </Button>
+      <Button onClick={handleClick}>다음</Button>
     </div>
   );
 };
