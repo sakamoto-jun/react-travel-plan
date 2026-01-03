@@ -1,25 +1,26 @@
-import ErrorMessage from "@/components/common/ErrorMessage";
-import Loading from "@/components/common/Loading";
-import NarrowLayout from "@/components/common/NarrowLayout";
-import SearchInput from "@/components/common/SearchInput";
-import CityList from "@/components/home/CityList";
-import FilterList from "@/components/home/FilterList";
-import useDebounce from "@/hooks/common/useDebounce";
-import { getCities, searchCities } from "@/services/home";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import ErrorMessage from '@/components/common/ErrorMessage';
+import Loading from '@/components/common/Loading';
+import NarrowLayout from '@/components/common/NarrowLayout';
+import SearchInput from '@/components/common/SearchInput';
+import CityList from '@/components/home/CityList';
+import FilterList from '@/components/home/FilterList';
+import useDebounce from '@/hooks/common/useDebounce';
+import { getCities, searchCities } from '@/services/home';
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 
 const Home = () => {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<'all' | 'domestic' | 'international'>('all');
   const debouncedQuery = useDebounce(query);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["cities", debouncedQuery],
+    queryKey: ['cities', debouncedQuery, filter],
     queryFn: () => {
       if (debouncedQuery) {
-        return searchCities(debouncedQuery);
+        return searchCities(debouncedQuery, filter === 'all' ? undefined : filter);
       } else {
-        return getCities();
+        return getCities(filter === 'all' ? undefined : filter);
       }
     }, // queryFn은 항상 return 하여 Promise를 반환하게 만들어야 됨.
     staleTime: 5000,
@@ -33,7 +34,7 @@ const Home = () => {
         onSearch={(q) => setQuery(q)}
       />
       <div className="mb-21">
-        <FilterList selectedFilter="all" onChange={() => {}} />
+        <FilterList selectedFilter={filter} onChange={(filter) => setFilter(filter)} />
       </div>
       {isLoading && <Loading />}
       {!isLoading && error && <ErrorMessage />}

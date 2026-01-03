@@ -1,4 +1,4 @@
-import type { City, Place } from "@/types";
+import type { City, Place } from '@/types';
 
 export const getCity = async (cityCode: string): Promise<City> => {
   const res = await fetch(`/api/cities/${cityCode}`);
@@ -19,17 +19,15 @@ export const getPlaces = async (
 
   if (category) {
     if (Array.isArray(category)) {
-      category.forEach((c) => queries.append("category", c));
+      category.forEach((c) => queries.append('category', c));
     } else {
-      queries.append("category", category);
+      queries.append('category', category);
     }
   }
 
   const queryString = queries.toString();
 
-  const res = await fetch(
-    `/api/cities/${cityCode}/places${queryString ? `?${queryString}` : ""}`
-  );
+  const res = await fetch(`/api/cities/${cityCode}/places${queryString ? `?${queryString}` : ''}`);
 
   if (!res.ok) {
     const message = await res.text();

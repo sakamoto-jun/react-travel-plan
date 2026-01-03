@@ -1,7 +1,11 @@
-import type { City } from "@/types";
+import type { City } from '@/types';
 
-export const getCities = async (): Promise<City[]> => {
-  const res = await fetch("/api/cities");
+export const getCities = async (
+  filter: undefined | 'domestic' | 'international'
+): Promise<City[]> => {
+  const queryString = new URLSearchParams(filter ? { filter } : {}).toString();
+
+  const res = await fetch(`/api/cities${queryString ? `?${queryString}` : ''}`);
 
   if (!res.ok) {
     const message = await res.text();
@@ -11,8 +15,19 @@ export const getCities = async (): Promise<City[]> => {
   return (await res.json()) as City[];
 };
 
-export const searchCities = async (searchValue: string): Promise<City[]> => {
-  const res = await fetch(`/api/cities/search?query=${searchValue}`);
+export const searchCities = async (
+  searchValue: string,
+  filter: undefined | 'domestic' | 'international'
+): Promise<City[]> => {
+  const queries = new URLSearchParams(searchValue ? { query: searchValue } : {});
+
+  if (filter) {
+    queries.append('filter', filter);
+  }
+
+  const queryString = queries.toString();
+
+  const res = await fetch(`/api/cities/search${queryString ? `?${queryString}` : ''}`);
 
   if (!res.ok) {
     const message = await res.text();
