@@ -3,7 +3,7 @@ import type { City } from '@/types';
 export const getCities = async (
   filter: undefined | 'domestic' | 'international'
 ): Promise<City[]> => {
-  const queryString = new URLSearchParams(filter ? { filter } : {}).toString();
+  const queryString = new URLSearchParams(filter ? { filter } : undefined).toString();
 
   const res = await fetch(`/api/cities${queryString ? `?${queryString}` : ''}`);
 
@@ -19,7 +19,7 @@ export const searchCities = async (
   searchValue: string,
   filter: undefined | 'domestic' | 'international'
 ): Promise<City[]> => {
-  const queries = new URLSearchParams(searchValue ? { query: searchValue } : {});
+  const queries = new URLSearchParams(searchValue ? { query: searchValue } : undefined);
 
   if (filter) {
     queries.append('filter', filter);

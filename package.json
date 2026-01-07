@@ -9,7 +9,8 @@
     "dev:server": "vite-node --watch server/index.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cy:open": "cypress open"
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.7",

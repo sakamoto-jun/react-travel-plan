@@ -63,6 +63,7 @@ const StepDateConfirm = ({ onCompleted }: { onCompleted: () => void }) => {
                       <td className="py-10">{format(dailyTime.date, 'EEE')}</td>
                       <td className="py-10">
                         <input
+                          data-testid="time-start"
                           type="time"
                           value={dailyTime.startTime}
                           onChange={(e) => setDailyTimes(index, e.currentTarget.value, 'startTime')}
@@ -70,6 +71,7 @@ const StepDateConfirm = ({ onCompleted }: { onCompleted: () => void }) => {
                       </td>
                       <td className="py-10">
                         <input
+                          data-testid="time-end"
                           type="time"
                           value={dailyTime.endTime}
                           onChange={(e) => setDailyTimes(index, e.currentTarget.value, 'endTime')}

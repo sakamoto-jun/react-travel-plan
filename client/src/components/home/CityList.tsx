@@ -40,7 +40,12 @@ const CityList = ({ cities }: CityListProps) => {
     <div className="w-full flex flex-wrap justify-between gap-y-28 ">
       {cities.length > 0 ? (
         cities.map((city) => (
-          <button type="button" key={city._id} onClick={() => openDetailModal(city)}>
+          <button
+            data-testid="city-card"
+            type="button"
+            key={city._id}
+            onClick={() => openDetailModal(city)}
+          >
             <Card
               title={city.nameEn}
               description={`${city.country.name} ${city.name}`}
