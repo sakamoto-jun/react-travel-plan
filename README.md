@@ -1,3 +1,69 @@
+# 📖 프로젝트 소개
+
+> 👉 “이 문서는 기능 설명보다, 문제를 발견하고 해결해온 개선 기록을 중심으로 작성했습니다.”  
+> 따라서 개선 항목은 **문제 → 원인 → 해결 → 코드** 흐름으로 정리했습니다.
+
+여행 계획을 세울 때 발생하는 **“장소 선택 → 체류 시간 입력 → 이동 시간 고려 → 하루 일정 분배”** 흐름을
+하나의 화면에서 안정적으로 관리할 수 있도록 만든 **여행 계획 프로젝트**입니다.
+
+프론트는 React + Tailwind CSS, 상태는 Zustand로 관리하고
+서버는 Express + NeDB로 직접 구성하여 데이터 **정규화/검증/검색 성능**을 개선했습니다.  
+또한 React Query의 `enabled`, `staleTime`을 적용해 **불필요한 요청과 UI flicker**를 줄였습니다.
+
+이 프로젝트의 목표는 기능 구현보다,
+실사용에서 터지는 케이스(날짜 `null` 처리, 잘못된 기간, 중복 장소, 총 시간 초과, 검색 IME 등)를
+직접 잡아내고 고치는 과정을 기록하며 개선하는 것이었습니다.
+
+## 대표 개선 사례
+
+- 상태: 날짜 `null` 처리, 도착일 유효성 검사, 중복 장소 방지, 총 시간 초과 검증(유틸화) → **상태 불일치 방지**
+- 서버: `_id` 제거, code/countryCode 정규화, 파라미터 정규화, O(n) 매칭 최적화 → **조회 일관성/성능 개선**
+- UX: IME + debounce + 캐싱으로 검색 UX 개선, Zustand 구독 최적화로 리렌더/스크롤 점프 해결 → **입력 UX 안정화**
+
+## 트라이 로그
+
+- 달력 커스텀 자유도를 높이기 위해 `react-day-picker`로 전환을 시도했지만
+  hover range preview가 기본 로직과 충돌하여 UX 완성도가 떨어졌고,
+  최종적으로 **제품 UX 완성도와 구현 효율**을 기준으로 `react-datepicker`로 회귀했습니다.
+
+## 실행 방법 (Local)
+
+**프론트엔드(Vite) + 백엔드(Express)** 가 `concurrently`를 통해 **동시에 실행되도록 구성**되어 있습니다.
+
+### 1. 패키지 설치
+
+```bash
+yarn install
+```
+
+### 2. 개발 서버 실행
+
+```bash
+yarn dev
+```
+
+## 사용한 것들
+
+**API / DB**
+
+- Express
+- NeDB
+
+**상태 관리**
+
+- Zustand
+- React Query
+
+**지도 / 달력**
+
+- Google Maps
+- react-datepicker / react-day-picker(시도)
+
+**스타일 / 클래스**
+
+- Tailwind CSS
+- clsx
+
 # ♻️ 개선 사항
 
 ## Store 부분
@@ -86,7 +152,7 @@ addPlannedPlace: (place, duration = 120) => {
   set((state) => {
     // [1] 기존 plannedPlaces 배열에서 동일한 place.name이 있는지 검사
     if (state.plannedPlaces.some((p) => p.place.name === place.name)) {
-      // [2] 중복이면 그대로 반환 → 상태 변화 없음 (랜더링 최소화)
+      // [2] 중복이면 그대로 반환 → 상태 변화 없음 (렌더링 최소화)
       return state;
     }
 
@@ -198,8 +264,6 @@ setDurationForPlannedPlace: (index, duration) => {
   });
 };
 ```
-
----
 
 ## ♻️ Express 부분
 
@@ -406,8 +470,6 @@ function attachCountryToCities(cities: City[], countries: Country[]): CitiesWith
 }
 ```
 
----
-
 ## ♻️ Component 부분
 
 ### 1. `CityDetail.tsx`
@@ -490,7 +552,7 @@ setDefaultLocale('ko');
 기존에는 `"HH:MM"` 문자열을 분 단위로 변환하기 위해 `parseInt()` 및 `slice()` 방식을 사용
 
 - 동작은 같지만 문자열 인덱스를 직접 다루어 가독성이 떨어지고, 유지보수가 불편하며 코드 의도가 한눈에 파악되지 않음  
-  또한 `dailyTimes` 배열의 총 시간을 계산하는 `reduce` 로직이 컴포넌트 랜더링마다 매번 재실행되어 불필요한 재계산이 발생하는 구조
+  또한 `dailyTimes` 배열의 총 시간을 계산하는 `reduce` 로직이 컴포넌트 렌더링마다 매번 재실행되어 불필요한 재계산이 발생하는 구조
 
 ```ts
 // component
@@ -515,7 +577,7 @@ const transformTimeToMinutes = (time: string) => {
 `split(':')`과 `map(Number)`를 활용한 직관적인 헬퍼 함수로 교체하여 `"시:분"` 포맷을 간단히 숫자 배열로 변환  
 `useMemo`를 적용해 `dailyTimes` 값이 변경될 때만 `reduce` 처리가 수행되도록 변경
 
-- 불필요한 재랜더링 시 계산을 방지하여 최적화
+- 불필요한 리렌더링 시 계산을 방지하여 최적화
 
 ```ts
 const { hours, minutes } = useMemo(() => {
@@ -605,7 +667,7 @@ return <GoogleMap mapContainerClassName="w-full h-full" center={center} zoom={10
 
 - 스크립트 로딩을 앱 전반에서 단일 인스턴스로 관리
 - `id` 기반으로 중복 로딩 방지
-- `isLoaded` 상태를 통해 명확한 랜더링 타이밍 제어
+- `isLoaded` 상태를 통해 명확한 렌더링 타이밍 제어
 - SSR / StrictMode 환경에서도 안정적인 동작 보장
 
 ```tsx
@@ -666,7 +728,7 @@ const PlanCity = () => {
 #### ✅ 해결
 
 `React Query`의 `enabled` 옵션을 사용하여 `cityCode`가 존재할 때만 쿼리를 활성화 하도록 개선  
-또한 `isLoading`, `error`, `!data` 상태를 명확히 분기하여 UI 랜더링 흐름이 더 직관적이고 안전하게 변경
+또한 `isLoading`, `error`, `!data` 상태를 명확히 분기하여 UI 렌더링 흐름이 더 직관적이고 안전하게 변경
 
 ```tsx
 const PlanCity = () => {
@@ -701,15 +763,15 @@ const PlanCity = () => {
 
 ### 6. `Wizard.tsx`
 
-#### 6-1. 랜더링 방식 개선 (`React.ComponentType` + JSX 랜더링)
+#### 6-1. 렌더링 방식 개선 (`React.ComponentType` + JSX 렌더링)
 
 #### ⛔ 문제
 
-기존에는 현재 스텝을 랜더링할 때 `steps[currentStep].component({ onNext })` 형태로 직접 함수 실행 방식을 사용
+기존에는 현재 스텝을 렌더링할 때 `steps[currentStep].component({ onNext })` 형태로 직접 함수 실행 방식을 사용
 
 - JSX 구조와 달라 가독성이 떨어짐
 - 타입스크립트가 컴포넌트 props 타입을 자동 추론하지 못함
-- 랜더링 시마다 새 함수 실행으로 불필요한 JSX 트리 생성 가능성이 존재
+- 렌더링 시마다 새 함수 실행으로 불필요한 JSX 트리 생성 가능성이 존재
 
 ```tsx
 type Step = {
@@ -727,9 +789,9 @@ return (
 
 #### ✅ 해결
 
-`component`의 타입을 `React.ComponentType<Props>`로 정의하여 컴포넌트를 “함수 실행”이 아닌 “JSX로 랜더링”하는 형태로 변경
+`component`의 타입을 `React.ComponentType<Props>`로 정의하여 컴포넌트를 “함수 실행”이 아닌 “JSX로 렌더링”하는 형태로 변경
 
-- 가독성 향상 + 타입 추론 개선 + 랜더링 효율성 향상
+- 가독성 향상 + 타입 추론 개선 + 렌더링 효율성 향상
 
 ```tsx
 type Step = {
@@ -747,7 +809,7 @@ const Wizard = ({ steps }: WizardProps) => {
   // [1] 현재 단계의 컴포넌트 변수 처리
   const CurrentComponent = steps[currentStep].component;
 
-  // [2] JSX 문법으로 랜더링
+  // [2] JSX 문법으로 렌더링
   return (
     <div className="flex">
       <Steps steps={steps} currentStep={currentStep} onNext={onNext} />
@@ -809,7 +871,7 @@ const Wizard = ({ steps }: WizardProps) => {
 
 #### 검색 UX 개선
 
-- IME(한글 입력) 처리 + `Debounce` + `React Query`, 조건부 랜더 최적화
+- IME(한글 입력) 처리 + `Debounce` + `React Query`, 조건부 렌더 최적화
 
 #### ⛔ 문제
 
@@ -828,8 +890,8 @@ const Wizard = ({ steps }: WizardProps) => {
 
   - 검색마다 재요청 → 로딩 / 비어 있는 리스트 깜빡임(flicker)
 
-- **`isLoading`, `error`, `data` 조건부 처리 리랜더로 인한 Input 영역 상태값 초기화**
-  - Input의 상태값 변경으로 JSX 전체가 리랜더되어 검색 도중에 검색어가 사라짐
+- **`isLoading`, `error`, `data` 조건부 처리 리렌더로 인한 Input 영역 상태값 초기화**
+  - Input의 상태값 변경으로 JSX 전체가 리렌더되어 검색 도중에 검색어가 사라짐
 
 ```tsx
 // useThrottle.ts
@@ -936,7 +998,7 @@ UX를 개선하기 위해 다음 작업을 진행
 
 - **`isLoading`, `error`, `data` 조건부 처리 최적화**
   - React Query 상태별 `return` 분기 대신  
-    Input은 항상 랜더, 리스트만 조건부 랜더링하여  
+    Input은 항상 렌더, 리스트만 조건부 렌더링하여  
     Input 상태 유지 + flicker 방지 + 검색 중 타이핑 UX 보장
 
 > 👉 **검색 컴포넌트는 입력 UI와 검색 로직을 분리해서 처리 한다.**  
@@ -1060,7 +1122,7 @@ const Home = () => {
 
 - **입력값 실시간 반영 문제**
 
-  - `setState`로만 처리 시 리랜더 타이밍 차이로 입력 직후 화면에는 여전히 이전 값이 잠깐 표시
+  - `setState`로만 처리 시 리렌더 타이밍 차이로 입력 직후 화면에는 여전히 이전 값이 잠깐 표시
 
 - **범위 제한 미적용**
   - `min`, `max` 속성은 브라우저 단에서만 검증되어 키보드 입력으로는 즉시 제한되지 않음
@@ -1126,7 +1188,7 @@ export const clamp = (value: number, min: number, max: number) => {
 />;
 ```
 
-### 9. `planMapConatiner.tsx`
+### 9. `PlanMapContainer.tsx`
 
 #### 숙소 맵 마커 표시 기능 추가
 
@@ -1476,7 +1538,7 @@ function createDayItem(
 }
 ```
 
-### 11. Zustand 전체 구독 제거로 리랜더 최적화
+### 11. Zustand 전체 구독 제거로 리렌더 최적화
 
 #### ⛔ 문제
 
@@ -1488,10 +1550,10 @@ const { plannedPlaces, addPlannedPlace, removePlannedPlace, updatePlannedPlace }
 
 이 구조에서는 다음과 같은 문제가 발생
 
-- `store` 내부의 어떤 상태든 변경되면 컴포넌트가 리랜더
-- 리스트에 아이템을 추가/삭제할 때마다 컴포넌트 전체 리랜더 발생
+- `store` 내부의 어떤 상태든 변경되면 컴포넌트가 리렌더
+- 리스트에 아이템을 추가/삭제할 때마다 컴포넌트 전체 리렌더 발생
 - 스크롤이 있는 리스트 UI에서 아이템 추가 시 스크롤 위치가 항상 상단으로 튀는 현상 발생
-- 실제로는 리스트(`plannedPlaces`)만 변경되었는데 불필요한 리랜더 범위가 너무 큼
+- 실제로는 리스트(`plannedPlaces`)만 변경되었는데 불필요한 리렌더 범위가 너무 큼
 
 > 👉 즉, 상태 변경 자체의 문제라기보다 “store 전체 구독으로 인한 과도한 리렌더”가 문제
 
@@ -1500,13 +1562,13 @@ const { plannedPlaces, addPlannedPlace, removePlannedPlace, updatePlannedPlace }
 `store` 전체를 구독하는 방식 대신,
 필요한 상태와 액션만 `selector`로 개별 구독하거나 `useShallow`로 구조 개선
 
-- 컴포넌트는 이제 `plannedPlaces`가 실제로 변경될 때만 리랜더
+- 컴포넌트는 이제 `plannedPlaces`가 실제로 변경될 때만 리렌더
 - 다른 `store` 상태 변경에는 영향을 받지 않음
 - 리스트 추가/삭제 시에도 스크롤 위치가 유지됨
 - UI 깜빡임, 스크롤 점프 현상 개선
 
-> 👉 객체 selector는 매 랜더마다 새 객체가 만들어지므로,  
-> `useShallow`로 내부 필드를 얕게 비교해 불필요한 리랜더를 방지한다.
+> 👉 객체 selector는 매 렌더마다 새 객체가 만들어지므로,  
+> `useShallow`로 내부 필드를 얕게 비교해 불필요한 리렌더를 방지한다.
 
 ```tsx
 // 개별 Selector -> Selector 뽑을 양이 적을 경우
@@ -1528,8 +1590,6 @@ const { plannedPlaces, addPlannedPlace, removePlannedPlace, updatePlannedPlace }
 );
 ```
 
----
-
 # 🧭 트라이 로그
 
 ## **Date Picker** 교체
@@ -1542,7 +1602,7 @@ const { plannedPlaces, addPlannedPlace, removePlannedPlace, updatePlannedPlace }
 
 - 문제점:
 
-  `react-datepicker`는 내부 CSS 영향력이 매우 강해, **Tailwind 기반 커스텀 디자인 적용이 까다로움**.
+  `react-datepicker`는 내부 CSS 영향력이 매우 강해, **Tailwind CSS 기반 커스텀 디자인 적용이 까다로움**.
 
   > ⚠️ 특히 버튼, 캘린더 셀 스타일을 프로젝트 디자인 시스템에 맞게 통일하기 어려움.
 
@@ -1550,7 +1610,7 @@ const { plannedPlaces, addPlannedPlace, removePlannedPlace, updatePlannedPlace }
 
 - 이유:
 
-  `react-day-picker`는 Headless 구조 기반이라 UI를 완전히 자유롭게 구성할 수 있고, 프로젝트의 커스텀 디자인 시스템과 Tailwind 조합에 적합하다고 판단.
+  `react-day-picker`는 Headless 구조 기반이라 UI를 완전히 자유롭게 구성할 수 있고, 프로젝트의 커스텀 디자인 시스템과 Tailwind CSS 조합에 적합하다고 판단.
 
 - 시도 내용:
 
@@ -1659,7 +1719,7 @@ const CustomMonthCaption = ({ calendarMonth, displayIndex, ...divProps }: MonthC
 
 - 결과:
 
-  `react-day-picker` 내부의 `range_middle` 로직과 충돌하여 hover 중간 날짜 스타일이 랜더링되지 않음. **즉, hover 상태의 예비 구간 강조 미적용.**
+  `react-day-picker` 내부의 `range_middle` 로직과 충돌하여 hover 중간 날짜 스타일이 렌더링되지 않음. **즉, hover 상태의 예비 구간 강조 미적용.**
 
   > ⚠️ v9.11.1 기준 공식 문서에서도 hover range preview 관련 API는 제공되지 않음.
   > 따라서 완전한 hover-range UX 구현은 사실상 불가능했음.
