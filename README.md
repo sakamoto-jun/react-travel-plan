@@ -64,6 +64,10 @@ yarn dev
 - Tailwind CSS
 - clsx
 
+**테스트**
+
+- Cypress
+
 # ♻️ 개선 사항
 
 ## Store 부분
